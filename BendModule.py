@@ -5,6 +5,7 @@ from WindowModule import Window
 import math
 import os
 import tkinter as tk
+import AutoBendModule
 from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo
 
