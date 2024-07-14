@@ -45,7 +45,7 @@ class AutoBendFinder(KompasAPI):
                 find_flag = True
                 previous_dot = self.second_point
                 counter = 0
-                while find_flag is True and counter < 10000:
+                while find_flag is True and counter < 10002:
                     for curve in self.all_curves:
                         counter += 1
                         if curve[1:4] == previous_dot and curve[4:] not in self.tube_route: #начало 1:4 лежит в предыдущей точке
@@ -60,6 +60,10 @@ class AutoBendFinder(KompasAPI):
                 print(1)
                 return
 
+            if counter > 1000:
+                print('CANNOT FIND ROUTE')
+                return
+            
             if self.tube_route[-1] != self.last_point:
                 self.tube_route.pop()
                 self.tube_route.append(self.last_point)

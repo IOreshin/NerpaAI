@@ -199,8 +199,6 @@ class BendTableCalculator(KompasAPI):
                     zero_dots_coords.append(current_point_coord)
 
                 else: #если выбран КМ и требуется корректировка
-                    """ВОВА ПОСМОТРИ СЮДА, ЭТО НЕСЛОЖНО СДЕЛАТЬ ТАК ЖЕ, КАК НАДО.
-                    МОЖНО ДАЖЕ В ТУПУЮ ПОСИДЕТЬ И ПОДОБРАТЬ ГДЕ МИНУС ГДЕ ПЛЮС ПОСТАВИТЬ"""
                     current_point_coord = [0,0,0]
                     for n in range(3):
                         coordinate = round((point_coord[n]-first_coordinates[n]))
@@ -285,8 +283,6 @@ class BendTableCalculator(KompasAPI):
                 
                 # Calculate arc length of the bend (R * θ)
                 arc_length = bend_radius * math.tan(math.radians(C)/2) ##это не длина дуги а её проекция
-                """Это высчитывается именно длина дуги, которая заходит на прямой участок.
-                То что это проекция - само собой разумеющееся, но проекция - причина, длина - следствие @Уг Вей"""
                 
                 # Calculate the offset (effective straight distance between bends excluding arc length)
                 if i == 1:

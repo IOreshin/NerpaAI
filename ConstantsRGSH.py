@@ -1,12 +1,12 @@
 
-POSITION_ID =  [307499772460.0, #bTYPE ID - 0
+POSITION_ID =  (307499772460.0, #bTYPE ID - 0
                     4.0, #PART NUMBER ID - 1
-                    5.0] #DESCRIPTION
+                    5.0) #DESCRIPTION
 
-bTYPE_NAMES = [('ASSY'),
+bTYPE_NAMES = (('ASSY'),
               ('DETAIL'),
               ('STANDART'),
-              ('PURCHASED')]
+              ('PURCHASED'))
 
 SOURCE_PROPERTIES_ID = (
                     (276022879831.0, 'OD'), #OD - 0
@@ -25,17 +25,15 @@ B_SPEC =        ('RGS.5.500.TUBE',
                 'RGS.XXX CV1', #PROFILE CV1
                 'RGS.XXX CV2') #PROFILE CV2
 
-mRGS_PIPING = (['API 5L X65', 73.0, 'RGS'], #M_tube, mOD, mRGS #MEG
-                   ['25Cr Duplex SS', 508.0, 'RGS'],#M_tube, mOD, mRGS #20" PROD
-                   ['25Cr Duplex SS', 406.4, 'RGS'],#M_tube, mOD, mRGS #16" PROD
-                   ['25Cr Duplex SS', 219.1, 'RGS'],#M_tube, mOD, mRGS #8" PROD
-                   ['API 5L X65', 33.4, 'RGS'],#M_tube, mOD, mRGS #MEG
-                   ['316L', 19.05, 'RGS'],#M_tube, mOD, mRGS
-                   ['25Cr Duplex SS', 19.05, 'RGS '],#M_tube, mOD, mRGS
-                   ['316L', 48.3, 'RGS'],#M_tube, mOD, mRGS
-                   [],#M_tube, mOD, mRGS
-                   [],#M_tube, mOD, mRGS
-                    )
+mRGS_PIPING = (['API 5L X65', 73.0, 'RGS 5.402.2.30'], #M_tube, mOD, mRGS #MEG
+                   ['25Cr Duplex SS', 508.0, 'RGS 5.434.4.1'],#M_tube, mOD, mRGS #20" PROD
+                   ['25Cr Duplex SS', 406.4, 'RGS 5.434.4.2'],#M_tube, mOD, mRGS #16" PROD
+                   ['25Cr Duplex SS', 219.1, 'RGS 5.434.3.1'],#M_tube, mOD, mRGS #8" PROD
+                   ['API 5L X65', 33.4, 'RGS 5.402.2.30'],#M_tube, mOD, mRGS #MEG
+                   ['316L', 19.05, 'RGS 5.431.3.5'],#M_tube, mOD, mRGS
+                   ['25Cr Duplex SS', 19.05, 'RGS 5.434.6.1'],#M_tube, mOD, mRGS
+                   ['316L', 48.3, 'RGS 5.431.3.5'],#M_tube, mOD, mRGS
+                )
 
 mNPS =          ([9.50, '0.375'], #OD, NPS
                 [12.7,'0.5'],
