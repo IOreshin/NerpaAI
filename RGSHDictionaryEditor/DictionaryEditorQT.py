@@ -158,7 +158,7 @@ class AddWord(QWidget):
 
 class DBManager():
     def __init__(self):
-        self.db_path = "D:\\GIT base\\NerpaAI\\lib\\DICTIONARY.db"
+        self.db_path = "DICTIONARY.db"
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
         self.table_name = 'dictionary'
