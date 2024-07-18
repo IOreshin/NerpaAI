@@ -1,5 +1,6 @@
 
-values = ['123','asd']
-placeholders = ', '.join(['?'] * len(values))
+text = 'A\nSTB VIEW\n2 PLACES'
+text1 = 'qefasd'
 
-print(placeholders)
+for item in text.split():
+    print(item)
