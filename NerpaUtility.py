@@ -6,20 +6,32 @@ from win32com.client import Dispatch, gencache
 from tkinter.messagebox import showerror
 
 def get_path():
+    '''
+    Получить путь в текущую директорию
+    '''
     return os.path.dirname(os.path.abspath(__file__)) #путь в корневую папку
 
 def read_json(path_to_file):
+    '''
+    Считывает JSON файл из переданного пути
+    и возвращает полученную информацию
+    '''
     path = os.path.dirname(os.path.abspath(__file__)) #получение пути к данному модулю
     techdemands_path = path+path_to_file #получение пути к файлу-источнику ТТ
     with open(techdemands_path,'r', encoding='utf-8') as TechDemandsSource:
         templates = json.load(TechDemandsSource)
     return (templates)
             
-        
 def format_error(doc_type):
     showerror('ERROR', 'ACTIVE DOCUMENT NOT {}'.format(doc_type))
 
 class KompasAPI():
+    '''
+    Класс для подключения к КОМПАС-3D.
+    При super() наследовании передает основные интефейсы:
+    module - API компаса, app - экземпляр Application,
+    const - константы Компаса
+    '''
     def __init__(self):
         self.module = gencache.EnsureModule('{69AC2981-37C0-4379-84FD-5DD2F3C0A520}', 0, 1, 0)
         self.app = Dispatch('Kompas.Application.7')
@@ -29,11 +41,20 @@ class KompasAPI():
             self.app.Visible = True
     
     def get_part_dispatch(self):
+        '''
+        Возвращает указатель на интерфейс iPart7
+        для сборки
+        '''
         iKompasDocument = self.app.ActiveDocument
         iKompasDocument3D = self.module.IKompasDocument3D(iKompasDocument)
         return iKompasDocument3D.TopPart
     
     def get_bodies_array(self):
+        '''
+        Возвращает list указателей тел из сборки.
+        Внутри встроена проверка на включению тела в спецификацию
+        и проверку зеркальности
+        '''
         iPart7 = self.get_part_dispatch()
         bodies_array = self.module.IFeature7(iPart7).ResultBodies
 
@@ -55,10 +76,17 @@ class KompasAPI():
             return
     
     def get_progress_bar(self):
+        '''
+        Возвращает интерфейс ProgressBar
+        '''
         progress_bar = self.app.ProgressBarIndicator
         return progress_bar
     
 class KompasItem():
+    '''
+    Класс с удобными методами для обработки тел и компонентов.
+    Для создания объекта этого класса нужно передать Dispatch тела или компонента.
+    '''
     def __init__(self, dispatch):
         self.dispatch = dispatch
         self.pattern_words = ['Массив', 'Зеркальное']
@@ -66,24 +94,31 @@ class KompasItem():
         self.module = self.kAPI.module
         self.app = self.kAPI.app
 
-    def get_prp_value(self,ID): #функция возвращения значения свойства по ID
+    def get_prp_value(self,ID): 
+        '''
+        Возвращает значение свойства по переданному ID. Формат ID - float
+        '''
         iPropertyMng = self.module.IPropertyMng(self.app)
         iPropertyKeeper = self.module.IPropertyKeeper(self.dispatch)
         return iPropertyKeeper.GetPropertyValue(iPropertyMng.GetProperty(self.app.ActiveDocument, ID),'',True, True)[1]
 
-    def set_prp_value(self,ID, PrpValue): #функция установки значения свойства по ID, VALUE
+    def set_prp_value(self,ID, PrpValue):
+        '''
+        Устанавливает значение свойства по переданному ID. Формат ID - float
+        '''
         iPropertyMng = self.module.IPropertyMng(self.app)
         iPropertyKeeper = self.module.IPropertyKeeper(self.dispatch)
         set_prp = iPropertyKeeper.SetPropertyValue(iPropertyMng.GetProperty(self.app.ActiveDocument, ID), PrpValue, True)
         return set_prp
 
     def is_patterned(self): 
+        '''
+        Метод проверки получен объект массивом или нет
+        '''
         try:
             sub_features = self.module.IFeature7(self.dispatch).SubFeatures(0, True, True)
             for sub in sub_features:
                 return any(word in sub.Name for word in self.pattern_words)
         except:
             return False
-
-
 

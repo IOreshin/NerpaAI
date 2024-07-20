@@ -5,36 +5,53 @@ from PropertyMngModule import PropertyManager
 from ConstantsRGSH import SOURCE_PROPERTIES_ID, B_SPEC, mNPS, mSCH, mRGS_PIPING, BOM_MTO_IDs
 from tkinter.messagebox import showinfo
 
-#класс получения данных и их адаптации по правилам РГШ-ИСО
-class AdaptParameters():
+
+class AdaptParameters(KompasAPI):
+    '''
+    Класс получения данных и их адаптации по правилам РГШ-ИСО.
+    Для создания объекта класса нужно передать Dispatch сборки или детали.
+    '''
     def __init__(self, dispatch):
+        super().__init__()
         self.dispatch = dispatch 
         self.state_arr = (None, '', '-')
 
-    #функция получения исходных данных свойств
     def get_property_values(self):
+        '''
+        Функция получения исходных данных свойств.
+        Возвращает словарь со свойствами
+        '''
+        #создание словаря свойств
         property_values = dict()
+        #создание объекта класса KompasItem для использования функции get_prp_value 
         body = KompasItem(self.dispatch)
+        #цикл прохода по списку исходных свойств
         for prop_ID in SOURCE_PROPERTIES_ID:
             value = body.get_prp_value(prop_ID[0])
             property_values[prop_ID[1]] = value
         return property_values
-    
-    #функция поиска соотвествия в list данных
+
     def lookup_value(self, value, lookup_table):
+        '''
+        Вспомогательная функция поиска соотвествия в list данных
+        '''
         for item in lookup_table:
             if value == item[0]:
                 return item[1]
         return '-'
-    
-    #функция преобразования значения в зависимости от условий
+
     def get_prp_parameter(self,parameter, multiplier=None, rounding = None):
+        '''
+        Функция преобразования значения в зависимости от условий
+        '''
         if parameter not in self.state_arr:
             return round(multiplier*parameter, rounding) if multiplier else parameter
         return '-'
 
-    #функция составления Наименования для объектов
     def get_description(self, nps, od, wt, tube_l, profile_l, thickness, description):
+        '''
+        Функция составления Наименования для объектов
+        '''
         if od not in self.state_arr: #DESC FOR TUBE
             if od > 70:
                 b_desc = 'PIPE NPS {} OD={} WT={} L={}'.format(nps,od,wt,round(1000*tube_l))
@@ -60,8 +77,10 @@ class AdaptParameters():
                 return b_desc, m_desc, m_dim
         return '-','-', '-'
 
-    #функция для определения материала
     def get_material(self, od, l_profile, mat, mat_name):
+        '''
+        функция для определения материала
+        '''
         if od not in self.state_arr:
             return mat
         elif l_profile not in self.state_arr:
@@ -72,8 +91,10 @@ class AdaptParameters():
         else:
             return '-'
 
-    #функция для определения bSPEC объекта
     def get_b_spec(self, od, l_prof, cv, profile_name, mRGS):
+        '''
+        Функция для определения bSPEC объекта
+        '''
         if od not in self.state_arr: #TUBE
             return mRGS
         elif l_prof not in self.state_arr: #MK
@@ -84,8 +105,10 @@ class AdaptParameters():
             else:
                 return B_SPEC[2]
 
-    #функция определения CV объекта
     def get_mst(self, l_profile, l_tube):
+        '''
+        Функция определения CV объекта
+        '''
         body = KompasItem(self.dispatch)
         mST = body.get_prp_value(245666335656.0)
         if mST in self.state_arr and l_profile not in self.state_arr:
@@ -102,6 +125,10 @@ class AdaptParameters():
         return '-'
     
     def get_bom_mto_params(self):
+        '''
+        Основная функция по преобразованию исходных свойств в
+        свойства по требованиям RGSH ISO
+        '''
         try:
             property_values = self.get_property_values()
 
@@ -156,29 +183,42 @@ class AdaptParameters():
         
             return BOM_MTO_VALUES
         except Exception:
-            showinfo('Error', 'Error in body properties. Check the correctness of objects in document')
+            self.app.MessageBoxEx('Ошибка в свойствах тел. Проверьте правильность создания тел в документе',
+                                  'Ошибка')
             return
             
-class AdaptAssy():
+class AdaptAssy(KompasAPI):
+    '''
+    Класс для обработки сборки
+    '''
     def __init__(self):
-        self.kAPI = KompasAPI()
-        self.iPart7 = self.kAPI.get_part_dispatch()
-        self.const = self.kAPI.const
+        super().__init__()
+        self.iPart7 = self.get_part_dispatch()
 
     def get_start_index(self):
+        '''
+        Метод для получения стартового индекса для
+        расстановки обозначений тел
+        '''
+        #получение SAFEARRAY компонентов
         parts = self.iPart7.PartsEx(self.const.ksUniqueParts)
         i = 1
         if parts is not None:
             top_marking = self.iPart7.Marking
             for part in parts:
+                #проверка принадлежности детали текущей сборке
                 part_marking = part.Marking[:-4]
                 if part_marking == top_marking:
                     i += 1
         return i
     
     def get_marking_info(self):
+        '''
+        Функция получения list с свойствами уникальных тел,
+        которые сортируются в marking_arr
+        '''
         bodies_parameters = []
-        bodies = self.kAPI.get_bodies_array()
+        bodies = self.get_bodies_array()
         if bodies is not None:
             for body_dispatch in bodies:
                 adapt_body = AdaptParameters(body_dispatch)
@@ -193,18 +233,27 @@ class AdaptAssy():
             return marking_arr
 
     def adapt_current_assy(self):
-        doc = self.kAPI.app.ActiveDocument
+        '''
+        Метод для адаптации входящих в сборку тел
+        '''
+        #проверка является ли активный документ сборкой
+        doc = self.app.ActiveDocument
         if doc.DocumentType != 5:
-            showinfo('Warning', 'Active document is not assy')
+            self.app.MessageBoxEx('Активный файл не является сборкой',
+                                  'Ошибка формата', 
+                                  64)
             return
+        
+        #проверка и добавление свойств RGSH
         property_manager = PropertyManager()
         property_manager.check_add_properties()
-        MARKING_INFO = self.get_marking_info()
-        START_INDEX = self.get_start_index()
+
+        MARKING_INFO = self.get_marking_info() #лист с инфо для маркировки
+        START_INDEX = self.get_start_index() #стартовый индекс для маркировки
         if MARKING_INFO:
-            progress_bar = self.kAPI.get_progress_bar()
+            progress_bar = self.get_progress_bar()
             progress_bar.Start(0.0, len(MARKING_INFO),'', True)
-            bodies = self.kAPI.get_bodies_array()
+            bodies = self.get_bodies_array()
             for i,body_dispatch in enumerate(bodies):
                 body_parameters = AdaptParameters(body_dispatch)
                 bom_mto_params = body_parameters.get_bom_mto_params()
@@ -228,20 +277,28 @@ class AdaptAssy():
 
                 progress_bar.SetProgress(i,'', True)
             progress_bar.Stop('', True)
-            showinfo('Great', 'Objects adapted. Check the correctness of operations')
-
-        
-
+            self.app.MessageBoxEx('Объекты адаптированы. Проверьте корректность выполнения операции',
+                                  'Успех!', 64)
+            
 
 class AdaltDetail(KompasAPI):
+    '''
+    Класс для обработки детали
+    '''
     def __init__(self):
         super().__init__()
 
     def adapt_current_detail(self):
+        '''
+        Метод для обработки детали
+        '''
+        #проверка формата документа
         doc = self.app.ActiveDocument
         if doc.DocumentType != 4:
-            showinfo('Warning', 'Active document is not detail')
+            self.app.MessageBoxEx('Активный документ не является деталью',
+                                  'Ошибка формата', 64)
             return
+        
         iPart7 = self.get_part_dispatch()
         bodies = self.module.IFeature7(iPart7).ResultBodies
         if bodies is not None:
@@ -256,13 +313,16 @@ class AdaltDetail(KompasAPI):
                 if body_object.get_prp_value(8.0) != 0:
                     true_bodies.append(bodies)
         else:
-            showinfo('Warning', 'No bodies in detail')
+            self.app.MessageBoxEx('В детали нет тел',
+                                  'Ошибка', 64)
             return
         
         if len(true_bodies) != 1:
-            showinfo('Warning', 'Detail should have only 1 body')
+            self.app.MessageBoxEx('Ошибка', 
+                     'Деталь содержит 2 или более тел', 64)
             return
         
+        #проверка и добавление свойств RGSH в деталь
         property_manager = PropertyManager()
         property_manager.check_add_properties()
 

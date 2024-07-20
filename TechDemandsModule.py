@@ -5,7 +5,6 @@ from NerpaUtility import KompasAPI, read_json
 from ConstantsRGSH import SHEET_FORMATS as formats
 import tkinter as tk
 from tkinter import ttk
-from tkinter.messagebox import showerror, showinfo
 
 
 class TechDemandWindow(Window):
@@ -41,13 +40,15 @@ class TechDemandWindow(Window):
         def get_tt():
             doc = self.kAPI.app.ActiveDocument
             if doc.DocumentType != 1:
-                showinfo('Warning', 'Active document not drawing')
+                self.kAPI.app.MessageBoxEx('Активный документ не является чертежом',
+                                           'Ошибка формата', 64)
                 return
             iKompasDocument2D = self.kAPI.module.IKompasDocument2D(doc)
             iDrawingDocument = self.kAPI.module.IDrawingDocument(iKompasDocument2D)
             TechDemand = iDrawingDocument.TechnicalDemand
             if TechDemand.IsCreated is True:
-                showinfo('Warning', 'Tech demands are already placed')
+                self.kAPI.app.MessageBoxEx('Технические требования уже размещены на чертеже',
+                                           'Ошибка', 64)
                 return
             TechDemand.AutoPlacement = False
             TechText = TechDemand.Text
@@ -71,9 +72,9 @@ class TechDemandWindow(Window):
             Format = iSheetFormat.Format
             TechDemand.BlocksGabarits = ((formats[Format][1]-140), 65, formats[Format][1]-5, formats[Format][2])
             TechDemand.Update()
-            showinfo('Успех!', 
-                "Технические требования размещены на чертеже. Проверьте корректность записи")
-
+            self.kAPI.app.MessageBoxEx('Технические требования размещены на чертеже. Проверьте корректность записи',
+                                       'Успех', 64)
+            
         self.create_button(ttk, frame2, 'Добавить', get_tt, 15, 'normal', 0, 2)
 
         root.update_idletasks()

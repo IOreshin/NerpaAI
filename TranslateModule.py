@@ -2,7 +2,7 @@
 from NerpaUtility import KompasAPI, get_path
 from tkinter import filedialog
 import shutil
-import win32com.client
+
 from DictionaryModule import DBManager
 
 from tkinter.messagebox import showerror, showinfo
@@ -12,7 +12,6 @@ class TranslateCDW(KompasAPI):
         super().__init__()
         self.rus_paths = []
         self.iDocuments = self.app.Documents
-        self.dict_path = get_path()+'\\lib\\DICTIONARY.csv'
         self.DICTIONARY = self.get_dictionary()
         self.dimensions_interfaces = ('DiametralDimensions',
                                       'LineDimensions',
@@ -44,8 +43,7 @@ class TranslateCDW(KompasAPI):
             if save_state:
                 for rus_path in self.rus_paths:
                     rus_doc = self.destroy_views(rus_path)
-                    self.get_symbols_containers(rus_doc)
-                    self.get_drawing_container(rus_doc)
+                    self.get_drawing_operations(rus_doc)
 
                     rus_doc.Close(1)
             
@@ -90,26 +88,96 @@ class TranslateCDW(KompasAPI):
 
         return iDoc
 
-    def get_drawing_container(self, doc_dispatch):
-        views = self.get_views_collection(doc_dispatch)
-        for view in views:
-            iDrawingContainer = self.module.IDrawingContainer(view)
-            for i, interface in enumerate(self.marking_interfaces):
-                marking_interface = getattr(iDrawingContainer, interface)
-                if marking_interface:
-                    for n in range(len(marking_interface)):
-                        marking_item = getattr(marking_interface, self.marking_interface[i])(n)
-                        marking_item_text = self.module.IText(marking_item)
-                        if marking_item_text.Str:
-                            edited_text = self.edit_mark_str(marking_item_text.Str)
-                            marking_item_text.Str = edited_text
-
-                        marking_item.Update()
-
-    def get_symbols_containers(self, doc_dispatch):
+    def get_drawing_operations(self, doc_dispatch):
         views = self.get_views_collection(doc_dispatch)
         for view in views:
             self.get_container_operations('ISymbols2DContainer', view)
+            self.drawing_container_operations(view, doc_dispatch)
+            self.translate_bom_table(view, doc_dispatch)
+
+    def destroy_object(self, doc_dispatch, object):
+        iDoc2D = self.module.IKompasDocument2D(doc_dispatch)
+        iDoc2D1 = self.module.IKompasDocument2D1(iDoc2D)
+        iDoc2D1.DestroyObjects(object)
+
+    def translate_bom_table(self, view, doc_dispatch):
+        if view.Name in ['BOM']:
+            iSymbolsContainer = self.module.ISymbols2DContainer(view)
+            DrwTables = iSymbolsContainer.DrawingTables
+            
+            for i in range(DrwTables.Count):
+                DrawingTable = DrwTables.DrawingTable(i)
+                table = self.module.ITable(DrawingTable)
+                if table.RowsCount == 1:
+                    DrawingTable.Delete()
+                   
+            AssoTables = iSymbolsContainer.AssociationTables
+            BomTable = AssoTables(0)
+            self.destroy_object(doc_dispatch, BomTable)
+
+            DrwTables = iSymbolsContainer.DrawingTables
+            table = self.module.ITable(DrwTables(0))
+            table_object = self.module.IDrawingObject(table)
+            columns_count = table.ColumnsCount
+            rows_count = table.RowsCount
+            table_range = table.Range(0,0,rows_count,columns_count)
+            cells = table_range.Cells
+            for cell in cells:
+                cell_format = self.module.ICellFormat(cell)
+                cell_format.ReadOnly = False
+                table_object.Update()
+                cell_text = self.module.IText(cell.Text)
+                if cell_text.Str:
+                    iTextLine = cell_text.TextLine(0)
+                    for i in range(iTextLine.Count):
+                        iTextItem = iTextLine.TextItem(i)
+                        HyperTextParams = self.module.IHypertextReferenceParam(iTextItem)
+                        HyperTextParams.Destroy()
+                        iTextItem.Update()
+                        if iTextItem.Str:
+                            edited_text = self.edit_symbol_str(iTextItem.Str)
+                            iTextItem.Str = edited_text
+                            iTextItem.Update()
+
+    def drawing_container_operations(self, view, doc_dispatch):
+        iDrawingContainer = self.module.IDrawingContainer(view)
+        iDrawingTexts = iDrawingContainer.DrawingTexts
+        if iDrawingTexts.Count:
+            for i in range(iDrawingTexts.Count):
+                iDrawingText = iDrawingTexts.DrawingText(i)
+                iDrawingText_text = self.module.IText(iDrawingText)
+                #случай, когда в названии вида вставлена ссылка
+                if iDrawingText_text.Str.startswith('^'):
+                    self.translate_view_designation(view)
+                    continue
+
+                if iDrawingText_text.Str and not iDrawingText_text.Str.startswith('^'):
+                    edited_text = self.edit_mark_str(iDrawingText_text.Str)
+                    iDrawingText_text.Str = edited_text
+
+                iDrawingText.Update()
+
+    def translate_view_designation(self, view):
+        view_designation = self.module.IViewDesignation(view)
+        view_inscription = view_designation.DrawingText
+        view_text = self.module.IText(view_inscription)
+        for i in range(view_text.Count):
+            text_line = view_text.TextLine(i)
+            if not text_line.Str.startswith('^'):
+                edited_text = self.edit_symbol_str(text_line.Str)
+                text_line.Str = edited_text
+                view_inscription.Update()
+            if text_line.Str.startswith('^'):
+                for n in range(text_line.Count):
+                    text_item = text_line.TextItem(n)
+                    text_font = self.module.ITextFont(text_item)
+                    text_font.Height = 7.0
+                    view_inscription.Update()
+                    text_item.Update()
+
+                view_inscription.Update()
+
+
 
     def get_container_operations(self, container_name, view):
         container_dispatch = getattr(self.module, container_name)(view)
@@ -132,24 +200,26 @@ class TranslateCDW(KompasAPI):
 
                     dim_item.Update()
 
+    #функция для обработки обозначения на чертеже
     def edit_mark_str(self, str_to_edit: str):
+        #если целиком фраза обозначения есть в словаре
         if str_to_edit.strip() in self.DICTIONARY.keys():
             edited_text = self.DICTIONARY[str_to_edit.strip()]
             if str_to_edit.startswith(' '):
                 return ' '+edited_text
             if str_to_edit.endswith(' '):
                 return edited_text+' '
-
             return edited_text
         
+        #если фраза состоит из строк
         if '\n' in str_to_edit:
             edited_text = ''
             for row in str_to_edit.split('\n'):
-                print(row)
                 edited_text += self.edit_single_str(row)
                 edited_text += '\n'
+            return edited_text
 
-        return edited_text
+        return self.edit_symbol_str(str_to_edit)
             
 
     def edit_symbol_str(self, str_to_edit: str):
@@ -209,10 +279,10 @@ class TranslateCDW(KompasAPI):
                 if self.number_space:
                     return f" {number} МЕСТ"
                 return f"{number} МЕСТ"
- 
 
-test = TranslateCDW()
-test.get_cdw_docs()
+
+#test = TranslateCDW()
+#test.get_cdw_docs()
 
 
 

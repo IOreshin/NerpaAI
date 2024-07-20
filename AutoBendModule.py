@@ -70,8 +70,8 @@ class AutoBendFinder(KompasAPI):
 
             return self.tube_route
 
-test = AutoBendFinder()
-test.get_tube_route()
+#test = AutoBendFinder()
+#test.get_tube_route()
 
 
 

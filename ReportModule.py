@@ -3,17 +3,24 @@ from tkinter.messagebox import showinfo
 from ConstantsRGSH import SHEET_FORMATS
 
 class MTOMaker(KompasAPI):
+    '''
+    Класс для создания MTO
+    '''
     def __init__(self):
         super().__init__()
-        self.name = 'MTO'
+        self.name = ' MTO'
         self.style = 2
         self.path = get_path()
         self.reports_styles_path = self.path+'\\lib\\RGSH_REPORTS.lrt'
 
     def get_report(self):
+        '''
+        Метод для создания МТО
+        '''
         doc = self.app.ActiveDocument
         if doc.DocumentType != 5:
-            format_error('ASSY')
+            self.app.MessageBoxEx('Активный файл не является сборкой',
+                                  'Ошибка', 64)
             return
         doc_path = doc.PathName
 
@@ -35,15 +42,22 @@ class MTOMaker(KompasAPI):
         iReport.Rebuild()
         iReport.SaveAs(report_filename)
 
-        msg = 'MTO is saved in: '+str(report_filename)
-        showinfo('MTO REPORT', msg)
+        msg = 'MTO is saved in:'+str(report_filename)
+        self.app.MessageBoxEx(msg, 'Успех', 64)
+
 
 
 class BOMMaker(KompasAPI):
+    '''
+    Класс для размещения BOM таблицы на чертеже
+    '''
     def __init__(self):
         super().__init__()
 
     def add_view(self):
+        '''
+        Метод добавления вида на чертеж
+        '''
         doc = self.app.ActiveDocument
         iLayoutSheets = doc.LayoutSheets
         iLayoutSheet = iLayoutSheets.Item(0)
@@ -63,6 +77,9 @@ class BOMMaker(KompasAPI):
         self.iDrawingObject.Update()
 
     def add_title(self):
+        '''
+        Метод для добавления заголовка таблицы
+        '''
         iSymbols2DContainer = self.module.ISymbols2DContainer(self.iView)
         DrawingTables = iSymbols2DContainer.DrawingTables
         self.bom_title_height = 8
@@ -79,6 +96,9 @@ class BOMMaker(KompasAPI):
         self.iDrawingObject.Update()
 
     def get_bom(self, source_path):
+        '''
+        Метод для размещения BOM на чертеже
+        '''
         self.add_view()
         self.add_title()
 
@@ -100,11 +120,6 @@ class BOMMaker(KompasAPI):
 
         iReportObjectsFilter = self.module.IReportObjectsFilter(iReport)
         iReportObjectsFilter.Bodies = True
-        #iReportObjectsFilter.InsertionFragments = False
-        #iReportObjectsFilter.InsertionViews = False
-        #iReportObjectsFilter.LocalParts = False
-        #iReportObjectsFilter.MacroObjects2D = False
-        #iReportObjectsFilter.ModelObjects = False
         iReportObjectsFilter.Parts = True
 
         iReportStyle = iReport.ReportStyle(iReport.CurrentStyleIndex)
@@ -128,6 +143,10 @@ class BOMMaker(KompasAPI):
         iAssociationTable.Rebuild()
 
     def place_bom_drw(self):
+        '''
+        Основной метод для проверки коллекции видов в чертеже
+        и добавления BOM таблицы
+        '''
         doc = self.app.ActiveDocument
         if doc.DocumentType != 1:
             format_error('DRAWING')
@@ -136,29 +155,29 @@ class BOMMaker(KompasAPI):
         iKompasDocument2D = self.module.IKompasDocument2D(doc)
         ViewsAndLayersManager = iKompasDocument2D.ViewsAndLayersManager
         iViews = ViewsAndLayersManager.Views
+
+        views_counter = 0
         if iViews.Count > 1:
-            for i in range(iViews.Count):
-                try:
-                    iView = iViews.View(i)
-                    if iView.Name == 'BOM':
-                        showinfo('Ошибка', 'В чертеже уже есть вид с BOM')
-                        return
-                except Exception:
-                    showinfo('Ошибка в нумерации видов', 
-                             'После системного вида должен следовать вид со следующим номером по порядку')
+            while views_counter < iViews.Count:
+                iView = iViews.View(views_counter)
+                if iView.Name == 'BOM':
+                    self.app.MessageBoxEx('В чертеже уже есть вид с BOM',
+                                              'Ошибка', 64)
+                    return
+                views_counter += 1
             
-            for i in range(iViews.Count):
-                try:
-                    iView = iViews.ViewByNumber(i)
-                    if iView.Name not in ['Системный вид', 'BOM']:
-                        iAssociationView = self.module.IAssociationView(iView)
-                        self.get_bom(iAssociationView.SourceFileName)
-                        showinfo('Успех!', 'BOM таблица добавлена в чертеж')
-                        return
-                except Exception:
-                    showinfo('Ошибка в нумерации видов', 
-                             'После системного вида должен следовать вид со следующим номером по порядку')
-            
+            views_counter = 0
+            while views_counter < iViews.Count:
+                iView = iViews.View(views_counter)
+                if iView.Name not in ['Системный вид', 'BOM']:
+                    iAssociationView = self.module.IAssociationView(iView)
+                    self.get_bom(iAssociationView.SourceFileName)
+                    self.app.MessageBoxEx('BOM таблица добавлена в чертеж',
+                                          'Успех', 64)
+                    return
+                views_counter += 1
+                
         else:
-            showinfo('Ошибка', 'Добавьте ассоциативный вид в чертеж')
+            self.app.MessageBoxEx('Добавьте ассоциативный вид в чертеж',
+                                  'Ошибка', 64)
 

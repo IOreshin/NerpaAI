@@ -3,17 +3,26 @@
 from NerpaUtility import get_path
 
 class Window:
+    '''
+    Базовый класс для всех окон приложения NerpaAI
+    '''
     def __init__(self):
         self.window_name = 'NerpaAI v2.0'
         self.directory = get_path()
         self.pic_path = self.directory+'\\pic\\2.ico' 
         
     def create_button(self, ttk, frame, text, command, width, state, row, column):
+        '''
+        Функция для создания кнопки
+        '''
         button = ttk.Button(frame, text = text, command = command, width = width, state = state)
         button.grid(row = row, column = column, padx = 5, pady = 5)
         return button
     
     def get_center_window(self, root):
+        '''
+        Функция автоматического размещения окна по центру экрана
+        '''
         s = root.geometry()
         s = s.split('+')
         s = s[0].split('x')

@@ -5,7 +5,7 @@ import sqlite3, os, json
 import tkinter as tk
 from tkinter import ttk
 from WindowModule import Window
-
+from NerpaUtility import read_json
 from tkinter.messagebox import showerror, showinfo
 
 
@@ -295,13 +295,6 @@ class DBManager():
         delete_query = f"""DELETE from {self.table_name} where rus_word = ?"""
         self.cursor.execute(delete_query, (value, ))
         self.conn.commit()
-
-def read_json(path_to_file):
-    path = os.path.dirname(os.path.abspath(__file__)) #получение пути к данному модулю
-    techdemands_path = path+path_to_file #получение пути к файлу-источнику ТТ
-    with open(techdemands_path,'r', encoding='utf-8') as TechDemandsSource:
-        templates = json.load(TechDemandsSource)
-    return (templates)
 
 class DictHelpWindow(Window):
     def __init__(self):

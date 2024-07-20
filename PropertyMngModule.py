@@ -3,20 +3,23 @@
 from NerpaUtility import KompasAPI, format_error, get_path
 from tkinter.messagebox import showerror
 
-class PropertyManager():
+class PropertyManager(KompasAPI):
+    '''
+    Класс для удобного использования методов,
+    связанных с работой со свойствами
+    '''
     def __init__(self):
-        self.kAPI = KompasAPI()
-        self.module = self.kAPI.module
-        self.app = self.kAPI.app
+        super().__init__()
         self.iPropertyMng = self.module.IPropertyMng(self.app)
 
-    
     def get_doc_properties(self):
-        self.kompas_doc = self.kAPI.app.ActiveDocument
+        '''
+        Функция получения списка свойств документа
+        '''
+        self.kompas_doc = self.app.ActiveDocument
         if self.kompas_doc.DocumentType not in [4,5]:
-            format_error('ASSY OR DETAIL')
-            return
-        
+            self.app.MessageBoxEx('Ошибка формата', 
+                                  'Ошибка формата', 64)
         properties = self.iPropertyMng.GetProperties(self.kompas_doc)
         properties_names = []
         for prop in properties:
@@ -24,6 +27,9 @@ class PropertyManager():
         return properties_names
     
     def check_add_properties(self):
+        '''
+        Функция для проверки и добавления свойств RGSH
+        '''
         try:
             directory_path = get_path()
             lib_path = directory_path+'\\lib\\PROPERTIES.lpt'
@@ -34,7 +40,8 @@ class PropertyManager():
                     self.iPropertyMng.AddProperty(self.kompas_doc, lib_prop)
 
         except Exception:
-            showerror('ERROR', 'LIB PATH ERROR')
+            self.app.MessageBoxEx('Ошибка в пути к библиотеке свойств',
+                                  'Ошибка', 64)
             return
 
 

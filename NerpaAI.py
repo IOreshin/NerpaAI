@@ -7,6 +7,8 @@ from TechDemandsModule import TechDemandWindow
 from AdaptModule import AdaltDetail, AdaptAssy
 from BendModule import BTWindow
 from ReportModule import MTOMaker, BOMMaker
+from TranslateModule import TranslateCDW
+from DictionaryModule import DictionaryWindow
 
 import tkinter as tk
 from tkinter import ttk
@@ -47,6 +49,14 @@ class MainWindow(Window):
     def set_positions(self):
         func = SetPositions()
         func.set_positions()
+        
+    def translate_cdw(self):
+        func = TranslateCDW()
+        func.get_cdw_docs()
+
+    def dict_editor(self):
+        func = DictionaryWindow()
+        func.get_dictionary_window()
 
     def get_main_window(self):
         root = tk.Tk()
@@ -66,6 +76,7 @@ class MainWindow(Window):
         frame3.grid(row = 2, column = 0, pady = 5, padx = 5, sticky = 'nsew')
         frame4.grid(row = 3, column = 0, pady = 5, padx = 5, sticky = 'nsew')
 
+
         frames = [frame1, frame2, frame3, frame4]
 
         def skip():
@@ -84,6 +95,8 @@ class MainWindow(Window):
                 ['SET POSITIONS', 2, self.set_positions, ["normal"]], #7
                 ['ADD NOTES', 2, self.tech_demand_window, ["normal"]], #8
                 ['ADD BEND TABLE', 2, self.bend_table, ["normal"]], #9
+                ['TRANSLATE CDW', 2, skip, ["normal"]], #10
+                ['DICTIONARY EDITOR', 2, skip, ["normal"]], #11
                 ]
 
         positions = [
@@ -95,7 +108,9 @@ class MainWindow(Window):
                     (0, 0), #6
                     (0, 0), #7
                     (2, 0), #8
-                    (3, 0)  #9
+                    (3, 0),  #9
+                    (4, 0),  #9
+                    (5, 0),  #9
                     ] 
 
         buttons = [self.create_button(ttk, frames[btn_params[i][1]], btn_params[i][0], btn_params[i][2], 40,
