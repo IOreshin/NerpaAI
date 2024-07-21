@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import font
 
+
 class MainWindow(Window):
     def __init__(self):
         super().__init__()

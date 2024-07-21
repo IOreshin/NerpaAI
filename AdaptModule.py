@@ -3,7 +3,7 @@
 from NerpaUtility import KompasAPI, KompasItem
 from PropertyMngModule import PropertyManager
 from ConstantsRGSH import SOURCE_PROPERTIES_ID, B_SPEC, mNPS, mSCH, mRGS_PIPING, BOM_MTO_IDs
-from tkinter.messagebox import showinfo
+
 
 
 class AdaptParameters(KompasAPI):

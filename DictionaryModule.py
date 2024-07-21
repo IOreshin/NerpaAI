@@ -246,7 +246,6 @@ class DBManager:
     def __init__(self):
         self.folder_path = get_path()
         self.db_path = self.folder_path+"\\lib\\DICTIONARY.db"
-        print(self.db_path)
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
         self.table_name = 'dictionary'

@@ -48,8 +48,11 @@ class KompasAPI:
         для сборки
         '''
         iKompasDocument = self.app.ActiveDocument
-        iKompasDocument3D = self.module.IKompasDocument3D(iKompasDocument)
-        return iKompasDocument3D.TopPart
+        if iKompasDocument:
+            iKompasDocument3D = self.module.IKompasDocument3D(iKompasDocument)
+            return iKompasDocument3D.TopPart
+        self.app.MessageBoxEx('Ошибка получения указателя iPart7',
+                              'Ошибка', 64)
     
     def get_bodies_array(self):
         '''

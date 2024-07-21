@@ -30,12 +30,20 @@ class TranslateCDW(KompasAPI):
                                   )
 
     def get_dictionary(self):
+        '''
+        Получить словарь РГШ
+        '''
         db_mng = DBManager()
         dictionary = db_mng.get_dictionary()
         db_mng.conn.close()
         return dictionary
     
     def get_cdw_docs(self):
+        '''
+        Основная функция модуля. Запускает окно выбора файлов.
+        Если выбраны документы, то запускает остальные методы
+        для перевода чертежей на русский
+        '''
         root = tk.Tk()
         root.withdraw()
 
@@ -57,9 +65,13 @@ class TranslateCDW(KompasAPI):
                      'Выбранные файлы созданы в версии RUS и переведены на русский язык. Проверьте и докорректируйте чертежи')
             
     def resave_docs(self, filepaths):
+        '''
+        Метод копирования исходных файлов.
+        Дополнительно записывает пути файлов в 
+        drawing_path_rus
+        '''
         try:
             for drawing_path in filepaths:
-                print(drawing_path)
                 drawing_path_rus = drawing_path[:-4]+' RUS.cdw'
                 self.rus_paths.append(drawing_path_rus)
                 shutil.copyfile(drawing_path, drawing_path_rus)
@@ -69,6 +81,10 @@ class TranslateCDW(KompasAPI):
             return False
 
     def get_views_collection(self, doc_dispatch):
+        '''
+        Метод получения всех возможных видов на чертеже.
+        Возвращает список диспатчей на каждый вид
+        '''
         iDoc2D = self.module.IKompasDocument2D(doc_dispatch)
         ViewsMng = iDoc2D.ViewsAndLayersManager
         iViews = ViewsMng.Views
@@ -86,6 +102,9 @@ class TranslateCDW(KompasAPI):
         return views_dispatchs
 
     def destroy_views(self, rus_path):
+        '''
+        Функция разрушения всех видов на чертеже
+        '''
         iDoc = self.iDocuments.Open(rus_path, False, False)
         iDoc2D = self.module.IKompasDocument2D(iDoc)
         iDoc2D1 = self.module.IKompasDocument2D1(iDoc2D)
@@ -96,18 +115,30 @@ class TranslateCDW(KompasAPI):
         return iDoc
 
     def get_drawing_operations(self, doc_dispatch):
+        '''
+        Функция для запуска прогона перевода
+        '''
         views = self.get_views_collection(doc_dispatch)
         for view in views:
             self.get_container_operations('ISymbols2DContainer', view)
             self.drawing_container_operations(view, doc_dispatch)
             self.translate_bom_table(view, doc_dispatch)
 
+        self.translate_stamp(doc_dispatch)
+        self.translate_tech_demands(doc_dispatch)
+
     def destroy_object(self, doc_dispatch, object):
+        '''
+        Общий метод для удаления различных объектов на чертеже
+        '''
         iDoc2D = self.module.IKompasDocument2D(doc_dispatch)
         iDoc2D1 = self.module.IKompasDocument2D1(iDoc2D)
         iDoc2D1.DestroyObjects(object)
 
     def translate_bom_table(self, view, doc_dispatch):
+        '''
+        Метод для переименования компонентов BOM
+        '''
         if view.Name in ['BOM']:
             iSymbolsContainer = self.module.ISymbols2DContainer(view)
             DrwTables = iSymbolsContainer.DrawingTables
@@ -174,17 +205,56 @@ class TranslateCDW(KompasAPI):
                 edited_text = self.edit_symbol_str(text_line.Str)
                 text_line.Str = edited_text
                 view_inscription.Update()
+
             if text_line.Str.startswith('^'):
                 for n in range(text_line.Count):
                     text_item = text_line.TextItem(n)
                     text_font = self.module.ITextFont(text_item)
                     text_font.Height = 7.0
+                    text_font.Italic = True
                     view_inscription.Update()
                     text_item.Update()
+                    
 
-                view_inscription.Update()
+            view_inscription.Update()
 
+    def translate_stamp(self, doc_dispatch):
+        iLayoutSheets = doc_dispatch.LayoutSheets
+        for i in range(iLayoutSheets.Count):
+            iLayoutSheet = iLayoutSheets.Item(i)
+            iStamp = iLayoutSheet.Stamp
+            text_cell_counter = 0
+            while text_cell_counter < 1000:
+                text = iStamp.Text(text_cell_counter)
+                if text.Str:
+                    edited_text = self.edit_mark_str(text.Str)
+                    text.Str = edited_text
+                    iStamp.Update()
+                
+                text_cell_counter += 1
 
+    def translate_tech_demands(self, doc_dispatch):
+        iDoc2D = self.module.IKompasDocument2D(doc_dispatch)
+        iDrawingDocument = self.module.IDrawingDocument(iDoc2D)
+        TechDemands = iDrawingDocument.TechnicalDemand
+        if TechDemands.IsCreated is False:
+            return
+        
+        key_words = ['NOTES',
+                     'CONJUNCTIONS',
+                     '3D MODEL']
+        TechText = TechDemands.Text
+        rows_count = TechText.Count
+        print(rows_count)
+        for i in range(TechText.Count-1):
+            TextLine = TechText.TextLine(i)
+            if TextLine:
+                print(TextLine.Str)
+                if any(key_word in TextLine.Str for key_word in key_words): 
+                    TextLine.Delete()
+                    TechDemands.Update()
+                
+                
 
     def get_container_operations(self, container_name, view):
         container_dispatch = getattr(self.module, container_name)(view)
@@ -228,7 +298,6 @@ class TranslateCDW(KompasAPI):
 
         return self.edit_symbol_str(str_to_edit)
             
-
     def edit_symbol_str(self, str_to_edit: str):
         if str_to_edit.strip() in self.DICTIONARY.keys():
             edited_text = self.DICTIONARY[str_to_edit.strip()]
@@ -288,12 +357,5 @@ class TranslateCDW(KompasAPI):
                 return "{} МЕСТ".format(number)
 
 
-#test = TranslateCDW()
-#test.get_cdw_docs()
-
-
-
-
-
-
-
+test = TranslateCDW()
+test.get_cdw_docs()
