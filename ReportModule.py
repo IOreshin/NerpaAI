@@ -149,7 +149,8 @@ class BOMMaker(KompasAPI):
         '''
         doc = self.app.ActiveDocument
         if doc.DocumentType != 1:
-            format_error('DRAWING')
+            self.app.MessageBoxEx('Активный документ не является чертежом',
+                                  'Ошибка', 64)
             return
         
         iKompasDocument2D = self.module.IKompasDocument2D(doc)

@@ -10,9 +10,9 @@ from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo
 
 def select_error():
-    showerror('Ошибка',
-    'Среди выделенных объектов есть прочие объекты либо нарушен порядок выбора. Проверьте выделение и повторите команду')      
-
+    KompasAPI().app.MessageBoxEx('Среди выделенных объектов есть прочие объекты либо нарушен порядок выбора. Проверьте выделение и повторите команду',
+                                 'Ошибка', 64)
+    
 #класс окна-интерфейса
 class BTWindow(Window):
     def __init__(self):
@@ -75,9 +75,11 @@ class BendTableCalculator(KompasAPI):
     def __init__(self):
         super().__init__()
 
-    """функция обработки точки. Для работы нужен диспатч iVertex и лист с координатами
-    #внутри есть проверка того точка это или нет и округление до одного знака"""
     def dot_operation(self, dot_dispatch, coordinate_list):
+        '''
+        Функция обработки точки. Для работы нужен диспатч iVertex и лист с координатами
+        внутри есть проверка того точка это или нет и округление до одного знака
+        '''
         try:
             point_coordinate = list(dot_dispatch.GetPoint()) #[BOOL,X1,Y1,Z1]
             if point_coordinate[0] is not True:
@@ -91,11 +93,13 @@ class BendTableCalculator(KompasAPI):
         except Exception:
             return False
 
-    """Функция обработки кривой. Для работы нужен диспатч iEdge, диспатч следующей кривой iEdge,
+    def curve_operation(self, current_curve, next_curve, last_coordinate, coordinate_list):
+        '''
+        Функция обработки кривой. Для работы нужен диспатч iEdge, диспатч следующей кривой iEdge,
     последнюю добавленную координату и лист с координатами
     Внутри реализованы проверка кривая это или нет, округление до 1 знака,
-    случай, когда начало и конец отрезка не лежит в последней координате(тройник например)"""
-    def curve_operation(self, current_curve, next_curve, last_coordinate, coordinate_list):
+    случай, когда начало и конец отрезка не лежит в последней координате(тройник например)
+        '''
         try:
             iMathCurve3D = current_curve.MathCurve 
             placement_matrix = list(iMathCurve3D.GetGabarit()) #[BOOL, x1,y1,z1,x2,y2,z2]
@@ -104,7 +108,7 @@ class BendTableCalculator(KompasAPI):
                 return
             for i in range(6): 
                 placement_matrix[i+1] = round(placement_matrix[i+1], 1)
-            print(placement_matrix[1:4], placement_matrix[4:], last_coordinate)
+            
             if placement_matrix[1:4] == last_coordinate:
                 coordinate_list.append(placement_matrix[4:])
                 return
@@ -116,7 +120,6 @@ class BendTableCalculator(KompasAPI):
             else:#случай, когда ТОЧКА начала или конца трубы не лежит в начале или конце ОТРЕЗКА
                 iMathCurve3D_next_curve = next_curve.MathCurve
                 next_placement_matrix = list(iMathCurve3D_next_curve.GetGabarit())
-                print(next_placement_matrix)
                 if next_placement_matrix[0] is not True:
                     select_error()
                     return
@@ -127,15 +130,13 @@ class BendTableCalculator(KompasAPI):
                 next_placement = [next_placement_matrix[1:4], next_placement_matrix[4:]]
 
                 if placement_matrix[1:4] in next_placement:
-                    print(1)
                     coordinate_list.append(placement_matrix[1:4])
                     return
                 
                 elif placement_matrix[4:] in next_placement:
-                    print(2)
                     coordinate_list.append(placement_matrix[4:])
                     return
-                print(3)
+                
                 
         except Exception:
             select_error()
@@ -144,15 +145,16 @@ class BendTableCalculator(KompasAPI):
     def get_coordinate_info(self):
         self.doc = self.app.ActiveDocument
         if self.doc.DocumentType != 5:
-            format_error('ASSY')
+            self.app.MessageBoxEx('Активный документ не является сборкой',
+                                  'Ошибка', 64)
             return
         
         iKompasDocument3D = self.module.IKompasDocument3D(self.doc)
         iSelectionManager = iKompasDocument3D.SelectionManager
         selected_objects = iSelectionManager.SelectedObjects
         if selected_objects is None or isinstance(selected_objects, tuple) is False:
-            showerror('ERROR',
-                      'MUST BE SELECTED 2 OR MORE OBJECTS')
+            self.app.MessageBoxEx('Должно быть выделено более 2 точек',
+                                  'Ошибка', 64)
             return
         
         source_dots_coords = [] #массив изначальных координат
@@ -328,8 +330,8 @@ class BendTableCalculator(KompasAPI):
                     temp_file.write(str(coordinate)+',')
                 temp_file.write('\n')
 
-        showinfo('Успех',
-        'BEND TABLE сформирована. Перейдите в чертеж выделенной трубы и нажмите кнопку <Добавить>')
+        self.app.MessageBoxEx('BEND TABLE сформирована. Перейдите в чертеж выделенной трубы и нажмите кнопку <Добавить>',
+                              'Успех', 64)
 
 class BendTableWriter(KompasAPI):
     def __init__(self):
@@ -338,7 +340,8 @@ class BendTableWriter(KompasAPI):
     def write_bend_table_doc(self):
         self.doc = self.app.ActiveDocument
         if self.doc.DocumentType != 1:
-            format_error('DRAWING')
+            self.app.MessageBoxEx('Активный документ не является чертежом',
+                                  'Ошибка', 64)
             return
         
         #проверка наличия видов модели в чертеже
@@ -346,14 +349,16 @@ class BendTableWriter(KompasAPI):
         ViewsAndLayersManager = iKompasDocument2D.ViewsAndLayersManager
         iViews = ViewsAndLayersManager.Views
         if iViews.Count == 1:
-            showerror('Ошибка', 'В чертеже нет видов модели')
+            self.app.MessageBoxEx('В чертеже нет видов модели',
+                                  'Ошибка', 64)
             return
         
         #проверка наличия вида BEND TABLE
         for i in range(iViews.Count):
             iView = iViews.View(i)
             if iView.Name == 'BEND TABLE':
-                showerror('Ошибка', 'В чертеже уже есть вид с BEND TABLE')
+                self.app.MessageBoxEx('В чертеже уже есть вид с BEND TABLE',
+                                  'Ошибка', 64)
                 return
         
         #считывания сформированных координат
@@ -361,8 +366,8 @@ class BendTableWriter(KompasAPI):
             with open(FilePath, 'r') as TempFile: #чтение JSON файла с координатами
                 BendInfo = TempFile.readlines() #получение массива данных-координат
         except Exception:
-            showerror('Ошибка', 
-        'Отсутствует сформированная BEND TABLE. Перейдите в сборку трубопровода и следуя инструкции выделите объекты трубы')
+            self.app.MessageBoxEx('Отсутствует сформированная BEND TABLE. Перейдите в сборку трубопровода и следуя инструкции выделите объекты трубы',
+                                  'Ошибка', 64)
             return
         
         #получение из названия трубы полной длины.
@@ -372,9 +377,9 @@ class BendTableWriter(KompasAPI):
             desc_tube_drw = drw_object.get_prp_value(5.0)
             total_length = desc_tube_drw.split('L=',1)[1].lstrip()
         except Exception:
-            showerror('Ошибка', 
-            'В Наименовании чертежа некорректная запись трубы. Перед снятием чертежа трубы проведите адаптацию сборки')
-        
+            self.app.MessageBoxEx('В Наименовании чертежа некорректная запись трубы. Перед снятием чертежа трубы проведите адаптацию сборки',
+                                  'Ошибка', 64)
+            
         #получение формата листа и координат размещения вида BEND TABLE
         iLayoutSheets = self.doc.LayoutSheets
         iLayoutSheet = iLayoutSheets.Item(0)
@@ -459,7 +464,8 @@ class BendTableWriter(KompasAPI):
         
         #удаление временного файла и объявление успешности работы
         os.remove(FilePath)
-        showinfo('Успех', 'BEND TABLE добавлен в чертеж. Вы прекрасны!')
+        self.app.MessageBoxEx('BEND TABLE добавлен в чертеж. Проверьте корректность выполнения операции',
+                              'Успех', 64)
         return
 
 class BTHelpWindow(Window):
