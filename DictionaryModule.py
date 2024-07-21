@@ -5,7 +5,7 @@ import sqlite3, os, json
 import tkinter as tk
 from tkinter import ttk
 from WindowModule import Window
-from NerpaUtility import read_json
+from NerpaUtility import read_json, get_path
 from tkinter.messagebox import showerror, showinfo
 
 
@@ -242,33 +242,35 @@ class AddWord(Window):
         get_error_msg(
             'Одно из слов уже находится в базе.\nПроверьте правильность заполнения')
 
-class DBManager():
+class DBManager:
     def __init__(self):
-        self.db_path = "lib\\DICTIONARY.db"
+        self.folder_path = get_path()
+        self.db_path = self.folder_path+"\\lib\\DICTIONARY.db"
+        print(self.db_path)
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
         self.table_name = 'dictionary'
 
     def create_table(self):
-        self.cursor.execute(f"""
+        self.cursor.execute("""
                             CREATE TABLE IF NOT EXISTS
-                            {self.table_name}
+                            {}
                             (id INTEGER PRIMARY KEY AUTOINCREMENT,
                             rus_word TEXT,
                             en_word TEXT)
-                            """)
+                            """.format(self.table_name))
 
     def get_dictionary(self):
-        self.cursor.execute(f"""
+        self.cursor.execute("""
                             SELECT rus_word, en_word
-                            FROM {self.table_name}""")
+                            FROM {}""".format(self.table_name))
         dict_list = self.cursor.fetchall()
         keys, values = zip(*dict_list)
         return dict(zip(keys, values))
             
     def get_column_info(self, column_name):
-        self.cursor.execute(f"""SELECT {column_name}
-                            FROM {self.table_name}""")
+        self.cursor.execute("""SELECT {}
+                            FROM {}""".format(column_name, self.table_name))
         column_info = self.cursor.fetchall()
         info_list = [info[0] for info in column_info]
 
@@ -282,17 +284,18 @@ class DBManager():
             if value in dictionary.values():
                 return False
 
-        self.cursor.execute(f"""
-                            INSERT INTO {self.table_name}
+        self.cursor.execute("""
+                            INSERT INTO {}
                             (rus_word, en_word)
                             VALUES (?,?)
-                               """, (values))
+                               """.format(self.table_name), (values))
         self.conn.commit()
 
         return True
     
     def delete_row(self, value):
-        delete_query = f"""DELETE from {self.table_name} where rus_word = ?"""
+        delete_query = """DELETE from {} 
+                        where rus_word = ?""".format(self.table_name)
         self.cursor.execute(delete_query, (value, ))
         self.conn.commit()
 

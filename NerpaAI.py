@@ -99,7 +99,7 @@ class MainWindow(Window):
                 ['Адаптировать сборку насквозь',1, skip, ["disabled"]], #31
                 ['Адаптировать активную сборку',1, self.adapt_assy, ["normal"]], #2
                 ['Адаптировать активную деталь',1, self.adapt_detail, ["normal"]], #3
-                ['Добавить свойства ISO-RGSH',1, self.check_add_prop, ["normal"]], #4
+                ['Добавить свойства ISO-RGSH',1,self.check_add_prop, ["normal"]], #4
                 ['Добавить BOM',2, self.get_BOM , ["normal"]], #5
                 ['Создать МТО',3, self.get_MTO, ["normal"]], #6
                 ['Установить позиции в активной сборке', 2, self.set_positions, ["normal"]], #7
@@ -133,7 +133,4 @@ class MainWindow(Window):
         root.geometry('+{}+{}'.format(w,h))
 
         root.mainloop()
-
-window = MainWindow()
-window.get_main_window()
 

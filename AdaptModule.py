@@ -280,7 +280,6 @@ class AdaptAssy(KompasAPI):
             self.app.MessageBoxEx('Объекты адаптированы. Проверьте корректность выполнения операции',
                                   'Успех!', 64)
             
-
 class AdaltDetail(KompasAPI):
     '''
     Класс для обработки детали

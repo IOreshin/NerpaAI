@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from NerpaUtility import KompasAPI, get_path
+import tkinter as tk
 from tkinter import filedialog
 import shutil
 
@@ -35,11 +36,16 @@ class TranslateCDW(KompasAPI):
         return dictionary
     
     def get_cdw_docs(self):
+        root = tk.Tk()
+        root.withdraw()
+
         filepaths = filedialog.askopenfilenames(
             title = "Выбор чертежей", 
             filetypes = [("КОМПАС-Чертежи", "*.cdw")])
-        if filepaths:
-            save_state = self.resave_docs(filepaths)
+        file_list = root.tk.splitlist(filepaths)
+        
+        if file_list:
+            save_state = self.resave_docs(file_list)
             if save_state:
                 for rus_path in self.rus_paths:
                     rus_doc = self.destroy_views(rus_path)
@@ -53,6 +59,7 @@ class TranslateCDW(KompasAPI):
     def resave_docs(self, filepaths):
         try:
             for drawing_path in filepaths:
+                print(drawing_path)
                 drawing_path_rus = drawing_path[:-4]+' RUS.cdw'
                 self.rus_paths.append(drawing_path_rus)
                 shutil.copyfile(drawing_path, drawing_path_rus)
@@ -263,22 +270,22 @@ class TranslateCDW(KompasAPI):
         finally:
             if 11 <= number % 100 <= 14:
                 if self.number_space:
-                    return f" {number} МЕСТ"
-                return f"{number} МЕСТ"
+                    return " {} МЕСТ".format(number)
+                return "{} МЕСТ".format(number)
             
             elif number % 10 == 1:
                 if self.number_space:
-                    return f" {number} МЕСТО"
-                return f"{number} МЕСТО"
+                    return " {} МЕСТО".format(number)
+                return "{} МЕСТО".format(number)
             
             elif 2 <= number % 10 <= 4:
                 if self.number_space:
-                    return f" {number} МЕСТА"
-                return f" {number} МЕСТА"
+                    return " {} МЕСТА".format(number)
+                return " {} МЕСТА".format(number)
             else:
                 if self.number_space:
-                    return f" {number} МЕСТ"
-                return f"{number} МЕСТ"
+                    return " {} МЕСТ".format(number)
+                return "{} МЕСТ".format(number)
 
 
 #test = TranslateCDW()

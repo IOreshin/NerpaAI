@@ -7,17 +7,15 @@
 # программно.
 #-------------------------------------------------------------------------------
 
-from NerpaUtility import KompasAPI, format_error, KompasItem
+from NerpaUtility import KompasAPI, KompasItem
 from ConstantsRGSH import POSITION_ID, bTYPE_NAMES
-from tkinter.messagebox import showinfo
-
 
 class SetPositions(KompasAPI):
     '''
     Класс для устновки позиций для тел и компонентов
     '''
     def __init__(self):
-        super().__init__() #получение интерфейсов KompasAPI
+        super().__init__()
         self.iPart7 = self.get_part_dispatch() #получение интерфейса iPart7
 
     def remove_spec_desc(self):

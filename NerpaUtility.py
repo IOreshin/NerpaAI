@@ -2,6 +2,7 @@
 
 import os
 import json
+import pythoncom
 from win32com.client import Dispatch, gencache
 from tkinter.messagebox import showerror
 
@@ -9,7 +10,7 @@ def get_path():
     '''
     Получить путь в текущую директорию
     '''
-    return os.path.dirname(os.path.abspath(__file__)) #путь в корневую папку
+    return os.path.dirname(os.path.abspath(__file__))
 
 def read_json(path_to_file):
     '''
@@ -25,7 +26,7 @@ def read_json(path_to_file):
 def format_error(doc_type):
     showerror('ERROR', 'ACTIVE DOCUMENT NOT {}'.format(doc_type))
 
-class KompasAPI():
+class KompasAPI:
     '''
     Класс для подключения к КОМПАС-3D.
     При super() наследовании передает основные интефейсы:
@@ -33,8 +34,9 @@ class KompasAPI():
     const - константы Компаса
     '''
     def __init__(self):
-        self.module = gencache.EnsureModule('{69AC2981-37C0-4379-84FD-5DD2F3C0A520}', 0, 1, 0)
-        self.app = Dispatch('Kompas.Application.7')
+        self.module = gencache.EnsureModule("{69AC2981-37C0-4379-84FD-5DD2F3C0A520}", 0, 1, 0)
+        self.app = self.module.IApplication(Dispatch("Kompas.Application.7")._oleobj_.QueryInterface(self.module.IApplication.CLSID, 
+                                                                                                     pythoncom.IID_IDispatch))
         self.const = gencache.EnsureModule("{2CAF168C-7961-4B90-9DA2-701419BEEFE3}", 0, 1, 0).constants
         self.const2D = gencache.EnsureModule("{75C9F5D0-B5B8-4526-8681-9903C567D2ED}", 0, 1, 0).constants
         if self.app.Visible is False:
@@ -82,7 +84,7 @@ class KompasAPI():
         progress_bar = self.app.ProgressBarIndicator
         return progress_bar
     
-class KompasItem():
+class KompasItem:
     '''
     Класс с удобными методами для обработки тел и компонентов.
     Для создания объекта этого класса нужно передать Dispatch тела или компонента.
