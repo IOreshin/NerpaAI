@@ -357,5 +357,5 @@ class TranslateCDW(KompasAPI):
                 return "{} МЕСТ".format(number)
 
 
-test = TranslateCDW()
-test.get_cdw_docs()
+#test = TranslateCDW()
+#test.get_cdw_docs()

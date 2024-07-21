@@ -5,7 +5,7 @@ from WindowModule import Window
 import math
 import os
 import tkinter as tk
-import AutoBendModule
+from AutoBendModule import AutoBendFinder
 from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo
 
@@ -44,7 +44,7 @@ class BTWindow(Window):
         combobox1.grid(row = 1, column = 0,padx=5,pady=5)
 
         global combobox2, NamesCombobox2
-        NamesCombobox2 = ['По линиям', 'По точкам']
+        NamesCombobox2 = ['По линиям', 'По точкам', 'Автоматически(ЭКСПЕРИМЕНТАЛЬНО)']
         combobox2 = ttk.Combobox(frame1, values= NamesCombobox2)
         combobox2.current(1)
         combobox2.grid(row = 1, column=1, padx=5,pady=5)
@@ -174,13 +174,21 @@ class BendTableCalculator(KompasAPI):
                     select_error()
                     return
                 
-        elif combobox2.get() == NamesCombobox2[1]:
+        elif combobox2.get() == NamesCombobox2[1]: #СПОСОБ ПО ТОЧКАМ
             try:
                 for i, object in enumerate(selected_objects):
                     state = self.dot_operation(object, source_dots_coords)
                     if state is False:
                         select_error()
                         return
+            except Exception:
+                select_error()
+                return
+        
+        elif combobox2.get() == NamesCombobox2[2]: #АВТО СПОСОБ
+            try:
+                auto_finder = AutoBendFinder()
+                source_dots_coords = auto_finder.get_tube_route()
             except Exception:
                 select_error()
                 return
@@ -320,7 +328,8 @@ class BendTableCalculator(KompasAPI):
                 relative_point_coord[i+1].append(round(value[2]))
                 relative_point_coord[i+1].append(round(value[1]))
                 relative_point_coord[i+1].append(round(value[0]))
-               
+
+        print(relative_point_coord)     
         global FilePath
         FilePath = ('{}\\BENDTEMP.txt').format(self.doc.Path)
 
