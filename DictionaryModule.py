@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sqlite3, os, json
+import sqlite3
 
 import tkinter as tk
 from tkinter import ttk
@@ -13,9 +13,10 @@ class DictionaryWindow(Window):
     def __init__(self):
         super().__init__()
         self.db_mng = DBManager()
+        self.dict_tree = None
 
     def add_word(self):
-        add_word_window = AddWord()
+        add_word_window = AddWord(self)
         add_word_window.get_add_word_window()
 
     def get_dictionary_window(self):
@@ -69,7 +70,7 @@ class DictionaryWindow(Window):
                                sticky = 'nsew')
         
         #создание дерева словаря
-        global dict_tree
+        
 
         self.dict_tree_style = ttk.Style()
         self.dict_tree_style.configure("Treeview",
@@ -82,20 +83,20 @@ class DictionaryWindow(Window):
                 foreground="black",
                 relief="raised")
 
-        dict_tree = ttk.Treeview(self.dict_frame, style="Treeview")
-        dict_tree.grid()
+        self.dict_tree = ttk.Treeview(self.dict_frame, style="Treeview")
+        self.dict_tree.grid()
 
-        dict_tree['columns'] = ('rus', 'en')
-        dict_tree.column("#0", width=0, stretch=tk.NO)
+        self.dict_tree['columns'] = ('rus', 'en')
+        self.dict_tree.column("#0", width=0, stretch=tk.NO)
 
-        dict_tree.column("rus")
-        dict_tree.heading("rus", text='Английский')
+        self.dict_tree.column("rus")
+        self.dict_tree.heading("rus", text='Английский')
 
-        dict_tree.column("en")
-        dict_tree.heading("en", text='Русский')
+        self.dict_tree.column("en")
+        self.dict_tree.heading("en", text='Русский')
         self.add_data_tree()
         self.alternate_colors()
-        dict_tree.bind('<Button-1>', self.alternate_colors_click)
+        self.dict_tree.bind('<Button-1>', self.alternate_colors_click)
 
 
         self.dict_root.update_idletasks()
@@ -104,34 +105,34 @@ class DictionaryWindow(Window):
         self.dict_root.mainloop()
 
     def alternate_colors(self):
-        for i, item in enumerate(dict_tree.get_children()):
+        for i, item in enumerate(self.dict_tree.get_children()):
             if i % 2 == 0:
-                dict_tree.item(item, tags=('evenrow',))
+                self.dict_tree.item(item, tags=('evenrow',))
             else:
-                dict_tree.item(item, tags=('oddrow',))
-        dict_tree.tag_configure('evenrow', background='white')
-        dict_tree.tag_configure('oddrow', background='lightblue')
+                self.dict_tree.item(item, tags=('oddrow',))
+        self.dict_tree.tag_configure('evenrow', background='white')
+        self.dict_tree.tag_configure('oddrow', background='lightblue')
 
     def alternate_colors_click(self, event):
-        for i, item in enumerate(dict_tree.get_children()):
+        for i, item in enumerate(self.dict_tree.get_children()):
             if i % 2 == 0:
-                dict_tree.item(item, tags=('evenrow',))
+                self.dict_tree.item(item, tags=('evenrow',))
             else:
-                dict_tree.item(item, tags=('oddrow',))
-        dict_tree.tag_configure('evenrow', background='white')
-        dict_tree.tag_configure('oddrow', background='lightblue')
+                self.dict_tree.item(item, tags=('oddrow',))
+        self.dict_tree.tag_configure('evenrow', background='white')
+        self.dict_tree.tag_configure('oddrow', background='lightblue')
 
     def help_page(self):
         help_window = DictHelpWindow()
         help_window.get_help_window()
 
     def delete_row(self):
-        selected_rows = dict_tree.selection()
+        selected_rows = self.dict_tree.selection()
         if selected_rows:
             for row in selected_rows:
-                item = dict_tree.item(row)
+                item = self.dict_tree.item(row)
                 self.db_mng.delete_row(item["values"][0])
-                dict_tree.delete(row)
+                self.dict_tree.delete(row)
                 self.alternate_colors()
 
             get_info_msg('Выделенные строка или строки успешно удалены')
@@ -142,7 +143,7 @@ class DictionaryWindow(Window):
     def add_data_tree(self):
         dict_data = self.db_mng.get_dictionary()
         for key, value in dict_data.items():
-            dict_tree.insert("","end",
+            self.dict_tree.insert("","end",
                             text="", values=(key, value))
             self.alternate_colors()
             
@@ -167,9 +168,10 @@ class DictionaryWindow(Window):
             get_error_msg('Введите слово для поиска')
 
 class AddWord(Window):
-    def __init__(self):
+    def __init__(self, window_instance):
         super().__init__()
         self.db_mng = DBManager()
+        self.window_instance = window_instance
 
     def get_add_word_window(self):
         #создание основного окна
@@ -232,7 +234,7 @@ class AddWord(Window):
         if add_word_state:
             get_info_msg(
                 'Пара слов успешно добавлена в базу')
-            dict_tree.insert("", "end",
+            self.window_instance.dict_tree.insert("", "end",
                              text='', values=(values_to_add[0], 
                                              values_to_add[1]))
             self.rus_entry.delete(0, tk.END)
@@ -333,6 +335,5 @@ def get_error_msg(error_msg):
 def get_info_msg(info_msg):
     showinfo('Информация', info_msg)
 
-#dictio = DictionaryWindow()
-#dictio.get_dictionary_window()
+
 

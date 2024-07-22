@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from NerpaUtility import KompasAPI, KompasItem, format_error, read_json
+from NerpaUtility import KompasAPI, KompasItem, read_json
 from WindowModule import Window
 import math
 import os
 import tkinter as tk
 from AutoBendModule import AutoBendFinder
 from tkinter import ttk
-from tkinter.messagebox import showerror, showinfo
+
 
 def select_error():
     KompasAPI().app.MessageBoxEx('Среди выделенных объектов есть прочие объекты либо нарушен порядок выбора. Проверьте выделение и повторите команду',
@@ -17,6 +17,13 @@ def select_error():
 class BTWindow(Window):
     def __init__(self):
         super().__init__()
+        self.method_combobox = None
+        self.product_combobox = None
+        self.products_names = ('KM',
+                              'SDU/CM')
+        self.methods_names = ('По линиям',
+                                  'По точкам',
+                                  'Авто')
 
     def get_bt_window(self):
         root = tk.Tk()
@@ -36,21 +43,20 @@ class BTWindow(Window):
         Label2 = tk.Label(frame1, text = "Способ построения", state=["normal"])
         Label2.grid(row = 0, column = 1, sticky = 'nsew', pady = 2, padx = 5)
 
-        #глобальные переменные для обращения к ним в других классах
-        global combobox1, NamesCombobox1
-        NamesCombobox1 = ['KM', 'SDU/CM']
-        combobox1 = ttk.Combobox(frame1, values= NamesCombobox1)
-        combobox1.current(0)
-        combobox1.grid(row = 1, column = 0,padx=5,pady=5)
+        
+        self.product_combobox = ttk.Combobox(frame1, 
+                                            values= self.products_names)
+        self.product_combobox.current(0)
+        self.product_combobox.grid(row = 1, column = 0,
+                                   padx=5,pady=5)
 
-        global combobox2, NamesCombobox2
-        NamesCombobox2 = ['По линиям', 'По точкам', 'Автоматически(ЭКСПЕРИМЕНТАЛЬНО)']
-        combobox2 = ttk.Combobox(frame1, values= NamesCombobox2)
-        combobox2.current(1)
-        combobox2.grid(row = 1, column=1, padx=5,pady=5)
+        self.method_combobox = ttk.Combobox(frame1, 
+                                 values= self.methods_names)
+        self.method_combobox.current(1)
+        self.method_combobox.grid(row = 1, column=1, padx=5,pady=5)
 
         def form_bend_info():
-            bend_table_calculator = BendTableCalculator()
+            bend_table_calculator = BendTableCalculator(self)
             bend_table_calculator.get_coordinate_info()
 
         def write_bend_info():
@@ -70,10 +76,10 @@ class BTWindow(Window):
         root.geometry('+{}+{}'.format(w,h))
         root.mainloop()
 
-
 class BendTableCalculator(KompasAPI):
-    def __init__(self):
+    def __init__(self, window_instance):
         super().__init__()
+        self.window_instance = window_instance
 
     def dot_operation(self, dot_dispatch, coordinate_list):
         '''
@@ -158,7 +164,7 @@ class BendTableCalculator(KompasAPI):
             return
         
         source_dots_coords = [] #массив изначальных координат
-        if combobox2.get() == NamesCombobox2[0]: #СПОСОБ ПО ЛИНИЯМ
+        if self.window_instance.method_combobox.get() == self.window_instance.methods_names[0]: #СПОСОБ ПО ЛИНИЯМ
             for i, object in enumerate(selected_objects):
                 try:
                     if i == 0: #подразумевается,
@@ -174,7 +180,7 @@ class BendTableCalculator(KompasAPI):
                     select_error()
                     return
                 
-        elif combobox2.get() == NamesCombobox2[1]: #СПОСОБ ПО ТОЧКАМ
+        elif self.window_instance.method_combobox.get() == self.window_instance.methods_names[1]: #СПОСОБ ПО ТОЧКАМ
             try:
                 for i, object in enumerate(selected_objects):
                     state = self.dot_operation(object, source_dots_coords)
@@ -185,7 +191,7 @@ class BendTableCalculator(KompasAPI):
                 select_error()
                 return
         
-        elif combobox2.get() == NamesCombobox2[2]: #АВТО СПОСОБ
+        elif self.window_instance.method_combobox.get() == self.window_instance.methods_names[2]: #АВТО СПОСОБ
             try:
                 auto_finder = AutoBendFinder()
                 source_dots_coords = auto_finder.get_tube_route()
@@ -201,7 +207,7 @@ class BendTableCalculator(KompasAPI):
             if i == 0:
                 zero_dots_coords.append([0,0,0])
             else:
-                if combobox1.get() == NamesCombobox1[1]: #если SDU/CM
+                if self.window_instance.product_combobox.get() == self.window_instance.products_names[1]: #если SDU/CM
                     current_point_coord = []
                     for n in range(3):
                         coordinate = round(point_coord[n]-first_coordinates[n])
