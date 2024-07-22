@@ -69,6 +69,10 @@ class DictionaryWindow(Window):
                                sticky = 'nsew')
         
         #создание дерева словаря
+        # TODO: я не уверен, но может быть ошибка. Так как переменная 'dict_tree' инциализируется ниже, а начинается
+        #  использоваться выше (self.add_word -> AddWord). Есть возможность попасть на ошибку:
+        #  "NameError: name 'dict_tree' is not defined".
+        #  Надо разобраться с порядком вызовов, и по возможности уйти от использования global, а передавать переменную явно
         global dict_tree
 
         self.dict_tree_style = ttk.Style()
@@ -277,6 +281,10 @@ class DBManager:
 
     def add_word(self, values):
         dictionary = self.get_dictionary()
+
+        # TODO: нижний цикл с проверкой в принципе можно переписать используя множества
+        # if set(values) & (set(d.dictionary()) | set(dictionary)):
+        #     return False
         for value in values:
             if value in dictionary:
                 return False
