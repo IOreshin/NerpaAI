@@ -184,8 +184,8 @@ class AutoBendFinder(KompasAPI):
         return []
 
 
-test = AutoBendFinder()
-test.get_tube_route()
+#test = AutoBendFinder()
+#test.get_tube_route()
 
 
 

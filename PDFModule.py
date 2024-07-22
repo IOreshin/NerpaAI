@@ -32,7 +32,7 @@ class PDFWindow(Window): #класс для создания пользоват�
                 newName = doc.PathName
                 snewName = newName[:-4]
                 IConverter = self.app.Converter('C:\\Program Files\\ASCON\\KOMPAS-3D v22\\Bin\\Pdf2d.dll')
-                # IConverter.VisualEditConvertParam() #ничерта не работает
+                # IConverter.VisualEditConvertParam() 
                 IConverter.Convert(newName, snewName+'.pdf', 0, True)
                 self.app.MessageBoxEx("Создан файл\n" + snewName+'.pdf', "PDF Module", 64)
             else:
@@ -40,7 +40,6 @@ class PDFWindow(Window): #класс для создания пользоват�
 
         def crtmanyPDF():
             filepaths = filedialog.askopenfilenames(title = "Выбор чертежей",
-                                                    initialdir = 'Z:\\14 РГШ\\YK RGS 2023\\02 Engineering\\08 MAN\\02 Engineering\\02 CAD folder', 
                                                     filetypes = [("КОМПАС-Чертежи", "*.cdw")])
             IConverter = self.app.Converter('C:\\Program Files\\ASCON\\KOMPAS-3D v22\\Bin\\Pdf2d.dll')
             for drawing in filepaths:
