@@ -3,14 +3,19 @@ from NerpaUtility import KompasAPI, get_path
 import tkinter as tk
 from tkinter import filedialog
 import shutil
-
+from ConstantsRGSH import SHEET_FORMATS as formats
 from DictionaryModule import DBManager
+
+import time
+import os
 
 from tkinter.messagebox import showerror, showinfo
 
 class TranslateCDW(KompasAPI):
     def __init__(self):
         super().__init__()
+        self.temp_dir = 'C:\\NerpaTranslateTemp'
+
         self.rus_paths = []
         self.iDocuments = self.app.Documents
         self.DICTIONARY = self.get_dictionary()
@@ -38,7 +43,7 @@ class TranslateCDW(KompasAPI):
         db_mng.conn.close()
         return dictionary
     
-    def get_cdw_docs(self):
+    def translate_cdw_docs(self):
         '''
         Основная функция модуля. Запускает окно выбора файлов.
         Если выбраны документы, то запускает остальные методы
@@ -53,17 +58,37 @@ class TranslateCDW(KompasAPI):
         file_list = root.tk.splitlist(filepaths)
         
         if file_list:
+            #try:
+               # os.mkdir(self.temp_dir)
+            #except FileExistsError:
+             #   pass
+
+
+            start_time = time.time()
             save_state = self.resave_docs(file_list)
             if save_state:
+                original_dir_items = file_list[0].split('/')
+                self.original_dir_path = '\\'.join(original_dir_item 
+                                              for original_dir_item in original_dir_items[:-1])
+                
                 for rus_path in self.rus_paths:
                     rus_doc = self.destroy_views(rus_path)
                     self.get_drawing_operations(rus_doc)
 
                     rus_doc.Close(1)
-            
+                end_time = time.time()
+                exuctution_time = round(end_time-start_time,2)
+                
+                #if self.copy_to_original_dir():
                 showinfo('Информация',
-                     'Выбранные файлы созданы в версии RUS и переведены на русский язык. Проверьте и докорректируйте чертежи')
-            
+                    'Выбранные файлы созданы в версии RUS и переведены на русский язык.Проверьте и докорректируйте чертежи.Перевод выполнен за {} сек'
+                    .format(exuctution_time))
+
+               # else:
+                #    showerror('Ошибка',
+                #             'Во время копирования в {} произошла ошибка'
+                 #            .format(self.original_dir_path))
+
     def resave_docs(self, filepaths):
         '''
         Метод копирования исходных файлов.
@@ -80,6 +105,43 @@ class TranslateCDW(KompasAPI):
             showerror('Ошибка', 'Ошибка копирования выбранных компонентов')
             return False
 
+    def resave_docs_(self, filepaths):
+        '''
+        Метод копирования исходных файлов.
+        Дополнительно записывает пути файлов в 
+        drawing_path_rus
+        '''
+        try:
+            for drawing_path in filepaths:
+                doc_name_items = drawing_path.split('/')
+                doc_name = doc_name_items[-1]
+                name, extension = os.path.splitext(doc_name)
+                path_items = [self.temp_dir,'\\',name, ' RUS.cdw']
+                drawing_path_rus = ''.join(path_items)
+                self.rus_paths.append(drawing_path_rus)
+                shutil.copyfile(drawing_path, drawing_path_rus)
+            return True
+        except:
+            showerror('Ошибка', 'Ошибка копирования выбранных компонентов')
+            return False
+
+    def copy_to_original_dir(self):
+        #try:
+            for rus_path in self.rus_paths:
+                doc_name_items = rus_path.split('\\')
+                doc_name = '\\'+doc_name_items[-1]
+                print(rus_path)
+                print(self.original_dir_path+doc_name)
+                shutil.copyfile(rus_path, self.original_dir_path+doc_name)
+            
+
+            shutil.rmtree(self.temp_dir)
+            #os.rmdir(self.temp_path)
+            return True
+        
+        #except Exception:
+        #    return False
+  
     def get_views_collection(self, doc_dispatch):
         '''
         Метод получения всех возможных видов на чертеже.
@@ -121,11 +183,13 @@ class TranslateCDW(KompasAPI):
         views = self.get_views_collection(doc_dispatch)
         for view in views:
             self.get_container_operations('ISymbols2DContainer', view)
-            self.drawing_container_operations(view, doc_dispatch)
+            self.drawing_container_operations(view)
             self.translate_bom_table(view, doc_dispatch)
+            self.translate_drawing_tables(view)
 
         self.translate_stamp(doc_dispatch)
         self.translate_tech_demands(doc_dispatch)
+        #self.change_layout_sheets(doc_dispatch)
 
     def destroy_object(self, doc_dispatch, object):
         '''
@@ -142,42 +206,89 @@ class TranslateCDW(KompasAPI):
         if view.Name in ['BOM']:
             iSymbolsContainer = self.module.ISymbols2DContainer(view)
             DrwTables = iSymbolsContainer.DrawingTables
-            
             for i in range(DrwTables.Count):
                 DrawingTable = DrwTables.DrawingTable(i)
                 table = self.module.ITable(DrawingTable)
-                if table.RowsCount == 1:
-                    DrawingTable.Delete()
-                   
+                table_object = self.module.IDrawingObject(table)
+                if table.RowsCount == 1: #шапка
+                    cell = table.Cell(0,0)
+                    cell_text = self.module.IText(cell.Text)
+                    cell_text.Str = 'СОСТАВ ИЗДЕЛИЯ'
+                    table_object.Update()
+
             AssoTables = iSymbolsContainer.AssociationTables
-            BomTable = AssoTables(0)
+            BomTable = AssoTables.AssociationTable(0)
             self.destroy_object(doc_dispatch, BomTable)
 
             DrwTables = iSymbolsContainer.DrawingTables
-            table = self.module.ITable(DrwTables(0))
-            table_object = self.module.IDrawingObject(table)
-            columns_count = table.ColumnsCount
-            rows_count = table.RowsCount
-            table_range = table.Range(0,0,rows_count,columns_count)
-            cells = table_range.Cells
-            for cell in cells:
-                cell_format = self.module.ICellFormat(cell)
-                cell_format.ReadOnly = False
-                table_object.Update()
-                cell_text = self.module.IText(cell.Text)
-                if cell_text.Str:
-                    iTextLine = cell_text.TextLine(0)
-                    for i in range(iTextLine.Count):
-                        iTextItem = iTextLine.TextItem(i)
+            table = self.module.ITable(DrwTables(1))
+            self.translate_any_table(table, True)
+
+    def translate_drawing_tables(self, view):
+        if view.Name not in ('BOM'):
+            iSymbolsContainer = self.module.ISymbols2DContainer(view)
+            DrwTables = iSymbolsContainer.DrawingTables
+            for i in range(DrwTables.Count):
+                DrawingTable = DrwTables.DrawingTable(i)
+                table = self.module.ITable(DrawingTable)
+                if table.RowsCount != 1:
+                    self.translate_any_table(table, True)
+
+    def translate_any_table(self, table, hyper_text_state:bool):
+        table_object = self.module.IDrawingObject(table)
+        columns_count = table.ColumnsCount
+        rows_count = table.RowsCount
+        table_range = table.Range(0,0,rows_count,columns_count)
+        cells = table_range.Cells
+        for cell in cells:
+            cell_format = self.module.ICellFormat(cell)
+            cell_format.ReadOnly = False
+            table_object.Update()
+            cell_text = self.module.IText(cell.Text)
+            if cell_text.Str and cell_text.Count == 1:
+                iTextLine = cell_text.TextLine(0)
+                for i in range(iTextLine.Count):
+                    iTextItem = iTextLine.TextItem(i)
+                    if hyper_text_state:
                         HyperTextParams = self.module.IHypertextReferenceParam(iTextItem)
                         HyperTextParams.Destroy()
                         iTextItem.Update()
-                        if iTextItem.Str:
-                            edited_text = self.edit_symbol_str(iTextItem.Str)
-                            iTextItem.Str = edited_text
-                            iTextItem.Update()
+                    if iTextItem.Str:
+                        edited_text = self.edit_symbol_str(iTextItem.Str)
+                        iTextItem.Str = edited_text
+                        iTextItem.Update()
+            
+            #случай нескольких строк в ячейке таблицы
+            elif cell_text.Count > 1:
+                TextLines = cell_text.TextLines
+                full_en_text = []
+                for i,TextLine in enumerate(TextLines):
+                    for n in range(TextLine.Count):
+                        TextItem = TextLine.TextItem(n)
+                        full_en_text.append([TextItem.Str, i, n])
 
-    def drawing_container_operations(self, view, doc_dispatch):
+                en_words = [word[0] for word in full_en_text]
+                en_str = " ".join(en_words)
+                ru_str = self.edit_mark_str(en_str)
+                ru_words = ru_str.split(' ')
+                #случай совпадения количества слов в русской и английской версиях
+                if len(en_words) == len(ru_words):
+                    for i,rus_word in enumerate(ru_words):
+                        TextLine = cell_text.TextLine(full_en_text[i][1])
+                        TextItem = TextLine.TextItem(full_en_text[i][2])
+                        TextItem.Str = rus_word
+                        TextItem.Update()
+                else:
+                    cell_text.Clear()
+                    for rus_word in ru_words:
+                        TextLine = cell_text.Add()
+                        TextItem = TextLine.Add()
+                        TextItem.Str = rus_word
+                        TextItem.Update()
+            else:
+                continue
+
+    def drawing_container_operations(self, view):
         iDrawingContainer = self.module.IDrawingContainer(view)
         iDrawingTexts = iDrawingContainer.DrawingTexts
         if iDrawingTexts.Count:
@@ -242,19 +353,54 @@ class TranslateCDW(KompasAPI):
         
         key_words = ['NOTES',
                      'CONJUNCTIONS',
-                     '3D MODEL']
+                     '3D MODEL',
+                     'CONJUNCTION']
         TechText = TechDemands.Text
-        rows_count = TechText.Count
-        print(rows_count)
-        for i in range(TechText.Count-1):
-            TextLine = TechText.TextLine(i)
+        TextLines = TechText.TextLines
+        
+        for TextLine in TextLines:
             if TextLine:
-                print(TextLine.Str)
                 if any(key_word in TextLine.Str for key_word in key_words): 
                     TextLine.Delete()
                     TechDemands.Update()
-                
-                
+
+        TechText = TechDemands.Text
+        TextLines = TechText.TextLines
+        tech_paragraphs = []
+        paragraph_count = -1
+        for TextLine in TextLines:
+            new_paragraph_state = False
+            if TextLine.Numbering == 1:
+                new_paragraph_state = True
+            if new_paragraph_state:
+                paragraph_count += 1
+            try:
+                tech_paragraphs[paragraph_count] = tech_paragraphs[
+                paragraph_count]+' '+TextLine.Str
+            except IndexError:
+                tech_paragraphs.append(TextLine.Str)
+
+        TechDemands.Delete()
+        TechDemands.Update()
+        for tech_paragraph in tech_paragraphs:
+            edited_text = self.edit_mark_str(tech_paragraph)
+            TextLine = TechText.Add()
+            TextLine.Str = edited_text
+            TextLine.Numbering = 1
+
+        iLayoutSheets = doc_dispatch.LayoutSheets
+        iLayoutSheet = iLayoutSheets.Item(0)
+        iSheetFormat = iLayoutSheet.Format
+        Format = iSheetFormat.Format
+        TechDemands.BlocksGabarits = ((formats[Format][1]-140), 65, formats[Format][1]-5, formats[Format][2])
+        TechDemands.Update()
+
+    def change_layout_sheets(self, doc_dispatch):
+        iLayoutSheets = doc_dispatch.LayoutSheets
+        for i in range(iLayoutSheets.Count):
+            iLayoutSheet = iLayoutSheets.Item(i)
+            #iLayoutSheet.LayoutStyleNumber = 2
+            iLayoutSheet.Update()
 
     def get_container_operations(self, container_name, view):
         container_dispatch = getattr(self.module, container_name)(view)
@@ -277,7 +423,6 @@ class TranslateCDW(KompasAPI):
 
                     dim_item.Update()
 
-    #функция для обработки обозначения на чертеже
     def edit_mark_str(self, str_to_edit: str):
         #если целиком фраза обозначения есть в словаре
         if str_to_edit.strip() in self.DICTIONARY.keys():
@@ -356,6 +501,5 @@ class TranslateCDW(KompasAPI):
                     return " {} МЕСТ".format(number)
                 return "{} МЕСТ".format(number)
 
-
-#test = TranslateCDW()
-#test.get_cdw_docs()
+test = TranslateCDW()
+test.translate_cdw_docs()
