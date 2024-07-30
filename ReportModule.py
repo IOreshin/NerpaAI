@@ -1,5 +1,7 @@
-from NerpaUtility import KompasAPI, get_path, format_error
-from tkinter.messagebox import showinfo
+# -*- coding: utf-8 -*-
+
+from NerpaUtility import KompasAPI, get_path
+
 from ConstantsRGSH import SHEET_FORMATS
 
 class MTOMaker(KompasAPI):

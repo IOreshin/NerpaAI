@@ -4,8 +4,6 @@ from NerpaUtility import KompasAPI, KompasItem
 from PropertyMngModule import PropertyManager
 from ConstantsRGSH import SOURCE_PROPERTIES_ID, B_SPEC, mNPS, mSCH, mRGS_PIPING, BOM_MTO_IDs
 
-
-
 class AdaptParameters(KompasAPI):
     '''
     Класс получения данных и их адаптации по правилам РГШ-ИСО.
@@ -277,7 +275,7 @@ class AdaptAssy(KompasAPI):
 
                 progress_bar.SetProgress(i,'', True)
             progress_bar.Stop('', True)
-            self.app.MessageBoxEx('Объекты адаптированы. Проверьте корректность выполнения операции',
+            self.app.MessageBoxEx('Объекты адаптированы. Проверьте корректность выполнения операции.',
                                   'Успех!', 64)
             
 class AdaltDetail(KompasAPI):

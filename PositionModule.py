@@ -9,6 +9,7 @@
 
 from NerpaUtility import KompasAPI, KompasItem
 from ConstantsRGSH import POSITION_ID, bTYPE_NAMES
+from LogModule import NerpaLogger
 
 class SetPositions(KompasAPI):
     '''
@@ -128,5 +129,5 @@ class SetPositions(KompasAPI):
     def set_positions(self):
         if self.remove_spec_desc():
             self.sort_set_positions()
-            self.app.MessageBoxEx('Позиции установлены. Проверьте корректность выполнения операции',
-                                    'Успех', 64)
+            self.app.MessageBoxEx('Позиции установлены. Проверьте корректность выполнения операции. Время операции - {} сек.'
+                                ,'Успех', 64)

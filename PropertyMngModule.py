@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from NerpaUtility import KompasAPI, format_error, get_path
-from tkinter.messagebox import showerror
+from NerpaUtility import KompasAPI, get_path
 
 class PropertyManager(KompasAPI):
     '''
