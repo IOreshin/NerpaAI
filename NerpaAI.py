@@ -1,17 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#from WindowModule import Window
-#from PositionModule import SetPositions
-#from PropertyMngModule import PropertyManager
-#from TechDemandsModule import TechDemandWindow
-#from AdaptModule import AdaltDetail, AdaptAssy
-#from BendModule import BTWindow
-#from ReportModule import MTOMaker, BOMMaker
-#from TranslateModule import TranslateCDW
-#from DictionaryModule import DictionaryWindow
-#from PDFModule import PDFWindow
 from resources import *
-
 
 import tkinter as tk
 from tkinter import ttk
@@ -100,7 +89,6 @@ class MainWindow(Window):
                                               row, col))
 
         return buttons
-
     
     def get_main_window(self):
         root = tk.Tk()
@@ -116,5 +104,3 @@ class MainWindow(Window):
         w, h = self.get_center_window(root)
         root.geometry('+{}+{}'.format(w,h))
         root.mainloop()
-
-MainWindow().get_main_window()

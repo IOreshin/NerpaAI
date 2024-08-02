@@ -1,0 +1,12 @@
+Uri: http://127.0.0.1:8000/
+File Name: C:\Новая папка\127.0.0.1\index-1.htm
+Content Type: text/html
+
+Uri: http://127.0.0.1:8000/static/images/hello_page.jpg
+File Name: C:\Новая папка\127.0.0.1\static\images\hello_page-1.jpg
+Content Type: image/jpeg
+
+Uri: http://127.0.0.1:8000/static/images/rgsh_logo.png
+File Name: C:\Новая папка\127.0.0.1\static\images\rgsh_logo-1.png
+Content Type: image/png
+
