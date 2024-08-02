@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from NerpaUtility import KompasAPI, get_path
+from .NerpaUtility import KompasAPI
 import tkinter as tk
 from tkinter import filedialog
 import shutil
-from ConstantsRGSH import SHEET_FORMATS as formats
-from DictionaryModule import DBManager
+from .ConstantsRGSH import SHEET_FORMATS as formats
+from .DictionaryModule import DBManager
 
 import time
 import os
@@ -33,6 +33,8 @@ class TranslateCDW(KompasAPI):
                                    )
         self.marking_interface = ('DrawingText',
                                   )
+        
+        self.translate_cdw_docs()
 
     def get_dictionary(self):
         '''
@@ -501,5 +503,3 @@ class TranslateCDW(KompasAPI):
                     return " {} МЕСТ".format(number)
                 return "{} МЕСТ".format(number)
 
-test = TranslateCDW()
-test.translate_cdw_docs()

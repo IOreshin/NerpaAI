@@ -1,10 +1,7 @@
 
 from NerpaAI import MainWindow
 
-def main():
-    wind = MainWindow()
-    wind.get_main_window()
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    main = MainWindow()
+    main.get_main_window()
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from NerpaUtility import KompasAPI, get_path
+from .NerpaUtility import KompasAPI, get_path
 
 import logging, yaml, datetime, getpass
 

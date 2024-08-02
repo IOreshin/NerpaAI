@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from NerpaUtility import KompasAPI
+from .NerpaUtility import KompasAPI
 from collections import defaultdict, deque
 
 class AutoBendFinder(KompasAPI):

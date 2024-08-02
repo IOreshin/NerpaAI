@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from NerpaUtility import KompasAPI
+from .NerpaUtility import KompasAPI
 
 class AutoTubeCdw(KompasAPI):
     def __init__(self):

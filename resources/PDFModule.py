@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from NerpaUtility import KompasAPI
+from .NerpaUtility import KompasAPI
 
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 
 
-from WindowModule import Window
+from .WindowModule import Window
 
 class PDFWindow(Window): #класс для создания пользовательского окна
     def __init__(self):

@@ -4,8 +4,8 @@ import sqlite3
 
 import tkinter as tk
 from tkinter import ttk
-from WindowModule import Window
-from NerpaUtility import read_json, get_path
+from .WindowModule import Window
+from .NerpaUtility import read_json, get_path
 from tkinter.messagebox import showerror, showinfo
 
 
@@ -14,6 +14,8 @@ class DictionaryWindow(Window):
         super().__init__()
         self.db_mng = DBManager()
         self.dict_tree = None
+
+        self.get_dictionary_window()
 
     def add_word(self):
         add_word_window = AddWord(self)
