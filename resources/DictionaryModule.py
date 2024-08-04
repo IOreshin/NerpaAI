@@ -152,19 +152,19 @@ class DictionaryWindow(Window):
     def find_word(self):
         value_to_find = self.find_entry.get()
         if value_to_find:
-            dict_tree_rows = dict_tree.get_children()
+            dict_tree_rows = self.dict_tree.get_children()
             #сброс подсветок
             for item in dict_tree_rows:
-                dict_tree.item(item, tags=())
+                self.dict_tree.item(item, tags=())
 
             #поиск строки и подсветка
             for item in dict_tree_rows:
-                values = dict_tree.item(item, 'values')
+                values = self.dict_tree.item(item, 'values')
                 if value_to_find in values:
-                    dict_tree.item(item, tags = ('highlight'))
-                    dict_tree.see(item) #прокрутка до объекта
+                    self.dict_tree.item(item, tags = ('highlight'))
+                    self.dict_tree.see(item) #прокрутка до объекта
                     break
-            dict_tree.tag_configure('highlight', background='yellow')
+            self.dict_tree.tag_configure('highlight', background='yellow')
             self.find_entry.delete(0, tk.END)
         else:
             get_error_msg('Введите слово для поиска')
@@ -316,7 +316,7 @@ class DictHelpWindow(Window):
         help_frame = ttk.LabelFrame(help_root, borderwidth = 5, relief = 'solid', text = 'Справка')
         help_frame.grid(row = 0, column = 0, pady = 5, padx = 5, sticky = 'nsew')
         
-        HelpPages = read_json('\\lib\\HELPPAGES.json' )
+        HelpPages = read_json('resources/lib/HELPPAGES.json' )
         HelpText = ''
         for item, text in HelpPages.items():
             if item == 'DICTIONARY EDITOR HELP':

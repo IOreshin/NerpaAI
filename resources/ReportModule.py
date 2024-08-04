@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .NerpaUtility import KompasAPI, get_path
+from .NerpaUtility import KompasAPI, get_resource_path
 
 from .ConstantsRGSH import SHEET_FORMATS
 
@@ -12,19 +12,25 @@ class MTOMaker(KompasAPI):
         super().__init__()
         self.name = ' MTO'
         self.style = 2
-        self.path = get_path()
-        self.reports_styles_path = self.path+'\\lib\\RGSH_REPORTS.lrt'
+        self.reports_styles_path = get_resource_path(
+            'resources/lib/RGSH_REPORTS.lrt')
         self.get_report()
 
     def get_report(self):
         '''
         Метод для создания МТО
         '''
-        doc = self.app.ActiveDocument
-        if doc.DocumentType != 5:
+        try:
+            doc = self.app.ActiveDocument
+            if doc.DocumentType != 5:
+                self.app.MessageBoxEx('Активный файл не является сборкой',
+                                    'Ошибка', 64)
+                return
+        except Exception:
             self.app.MessageBoxEx('Активный файл не является сборкой',
-                                  'Ошибка', 64)
+                                    'Ошибка', 64)
             return
+        
         doc_path = doc.PathName
 
         iPropertyMng = self.module.IPropertyMng(self.app)

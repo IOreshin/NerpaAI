@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from .NerpaUtility import get_path
+from .NerpaUtility import get_resource_path
+import tkinter as tk
 
 class Window:
     '''
@@ -8,9 +9,7 @@ class Window:
     '''
     def __init__(self):
         self.window_name = 'NerpaAI v2.0'
-        self.directory = get_path()
-        self.pic_path = self.directory+'\\pic\\2.ico'
-        
+        self.pic_path = get_resource_path('resources/pic/2.ico')
         
     def create_button(self, ttk, frame, text, command, width, state, row, column):
         '''
@@ -38,3 +37,4 @@ class Window:
         h = (h_screen - h_root) // 2
 
         return w,h
+    

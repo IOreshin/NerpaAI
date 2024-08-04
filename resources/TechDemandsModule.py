@@ -28,7 +28,7 @@ class TechDemandWindow(Window):
         help_label = tk.Label(frame1, text = "Выберите из списка шаблон ТТ и нажмите кнопку <Добавить> ", state=["normal"])
         help_label.grid(row = 0, column = 1, sticky = 'e', pady = 2, padx = 5)
 
-        self.templates = read_json('\\lib\\TECHDEMANDS.JSON')
+        self.templates = read_json('resources/lib/TECHDEMANDS.JSON')
 
         templates_names = []
         for name, text in self.templates.items():
@@ -39,11 +39,17 @@ class TechDemandWindow(Window):
         combobox_type.grid(row = 0, column= 0, columnspan=2,padx=5,pady=5)
 
         def get_tt():
-            doc = self.kAPI.app.ActiveDocument
-            if doc.DocumentType != 1:
+            try:
+                doc = self.kAPI.app.ActiveDocument
+                if doc.DocumentType != 1:
+                    self.kAPI.app.MessageBoxEx('Активный документ не является чертежом',
+                                            'Ошибка формата', 64)
+                    return
+            except Exception:
                 self.kAPI.app.MessageBoxEx('Активный документ не является чертежом',
-                                           'Ошибка формата', 64)
+                                            'Ошибка формата', 64)
                 return
+
             iKompasDocument2D = self.kAPI.module.IKompasDocument2D(doc)
             iDrawingDocument = self.kAPI.module.IDrawingDocument(iKompasDocument2D)
             TechDemand = iDrawingDocument.TechnicalDemand

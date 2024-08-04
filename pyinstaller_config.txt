@@ -1,0 +1,1 @@
+pyinstaller --onefile --windowed --add-data "resources;resources" NerpaQT.py

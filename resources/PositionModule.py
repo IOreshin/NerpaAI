@@ -23,11 +23,17 @@ class SetPositions(KompasAPI):
         '''
         Метод удаления описаний спецификаций в сборке
         '''
-        iKompasDocument = self.app.ActiveDocument #интерфейс активного окно
-        if iKompasDocument.DocumentType != 5: #если не сборка
+        try:
+            iKompasDocument = self.app.ActiveDocument #интерфейс активного окно
+            if iKompasDocument.DocumentType != 5: #если не сборка
+                self.app.MessageBoxEx('Активный документ не является сборкой',
+                                    'Ошибка', 64)
+                return
+        except Exception:
             self.app.MessageBoxEx('Активный документ не является сборкой',
-                                  'Ошибка', 64)
+                                    'Ошибка', 64)
             return
+        
         SpecDescs = iKompasDocument.SpecificationDescriptions #коллекция спецификаций
         spec = SpecDescs.Active #попытка получить спецификацию
         if spec:

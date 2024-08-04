@@ -4,11 +4,13 @@ from resources import *
 
 import tkinter as tk
 from tkinter import ttk
+import webbrowser
 
 class MainWindow(Window):
     def __init__(self):
-        super().__init__() 
-
+        super().__init__()
+        self.app = NerpaUtility.KompasAPI().app
+        
     def check_add_prop(self):
         func = PropertyManager()
         func.check_add_properties()
@@ -73,7 +75,9 @@ class MainWindow(Window):
             {'text': 'Редактор словаря', 'frame': 'extra', 
              'command': DictionaryWindow, 'state': 'normal'},
             {'text': 'Создать PDF', 'frame': 'extra', 
-             'command': self.get_pdf_window, 'state': 'normal'}
+             'command': self.get_pdf_window, 'state': 'normal'},
+            {'text': 'Справка', 'frame': 'extra', 
+             'command': self.get_help_page, 'state': 'normal'},
         ]
 
         buttons = []
@@ -104,3 +108,11 @@ class MainWindow(Window):
         w, h = self.get_center_window(root)
         root.geometry('+{}+{}'.format(w,h))
         root.mainloop()
+
+    def get_help_page(self):
+        page_path = get_resource_path('ReadMe.htm')
+        webbrowser.open(page_path)
+
+if __name__ == '__main__':
+    main = MainWindow()
+    main.get_main_window()

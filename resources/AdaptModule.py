@@ -236,11 +236,16 @@ class AdaptAssy(KompasAPI):
         Метод для адаптации входящих в сборку тел
         '''
         #проверка является ли активный документ сборкой
-        doc = self.app.ActiveDocument
-        if doc.DocumentType != 5:
-            self.app.MessageBoxEx('Активный файл не является сборкой',
-                                  'Ошибка формата', 
-                                  64)
+        try:
+            doc = self.app.ActiveDocument
+            if doc.DocumentType != 5:
+                self.app.MessageBoxEx('Активный документ не является сборкой',
+                                    'Ошибка формата', 
+                                    64)
+                return
+        except:
+            self.app.MessageBoxEx('Активный документ не является сборкой',
+                                  'Ошибка формата', 64)
             return
         
         #проверка и добавление свойств RGSH
@@ -292,8 +297,13 @@ class AdaltDetail(KompasAPI):
         Метод для обработки детали
         '''
         #проверка формата документа
-        doc = self.app.ActiveDocument
-        if doc.DocumentType != 4:
+        try:
+            doc = self.app.ActiveDocument
+            if doc.DocumentType != 4:
+                self.app.MessageBoxEx('Активный документ не является деталью',
+                                    'Ошибка формата', 64)
+                return
+        except Exception:
             self.app.MessageBoxEx('Активный документ не является деталью',
                                   'Ошибка формата', 64)
             return

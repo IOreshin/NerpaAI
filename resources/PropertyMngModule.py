@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .NerpaUtility import KompasAPI, get_path
+from .NerpaUtility import KompasAPI, get_path, get_resource_path
 
 class PropertyManager(KompasAPI):
     '''
@@ -15,10 +15,16 @@ class PropertyManager(KompasAPI):
         '''
         Функция получения списка свойств документа
         '''
-        self.kompas_doc = self.app.ActiveDocument
-        if self.kompas_doc.DocumentType not in [4,5]:
+        try:
+            self.kompas_doc = self.app.ActiveDocument
+            if self.kompas_doc.DocumentType not in [4,5]:
+                self.app.MessageBoxEx('Ошибка формата', 
+                                    'Ошибка формата', 64)
+        except Exception:
             self.app.MessageBoxEx('Ошибка формата', 
-                                  'Ошибка формата', 64)
+                                    'Ошибка формата', 64)
+            return
+        
         properties = self.iPropertyMng.GetProperties(self.kompas_doc)
         properties_names = []
         for prop in properties:
@@ -30,8 +36,7 @@ class PropertyManager(KompasAPI):
         Функция для проверки и добавления свойств RGSH
         '''
         try:
-            directory_path = get_path()
-            lib_path = directory_path+'\\lib\\PROPERTIES.lpt'
+            lib_path = get_resource_path('resources/lib/PROPERTIES.lpt')
             lib_properties = self.iPropertyMng.GetProperties(lib_path)
             doc_properties = self.get_doc_properties()
             for lib_prop in lib_properties:

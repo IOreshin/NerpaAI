@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import os
+import os, sys
 import json
 import pythoncom
 from win32com.client import Dispatch, gencache
-from tkinter.messagebox import showerror
+from tkinter.messagebox import showerror, showinfo
 
 def get_path():
     '''
@@ -12,19 +12,26 @@ def get_path():
     '''
     return os.path.dirname(os.path.abspath(__file__))
 
+def get_resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath('.')
+
+    return os.path.join(base_path, relative_path)
+
+
 def read_json(path_to_file):
     '''
     Считывает JSON файл из переданного пути
     и возвращает полученную информацию
     '''
-    path = os.path.dirname(os.path.abspath(__file__)) #получение пути к данному модулю
-    techdemands_path = path+path_to_file #получение пути к файлу-источнику ТТ
-    with open(techdemands_path,'r', encoding='utf-8') as TechDemandsSource:
-        templates = json.load(TechDemandsSource)
+    path = get_resource_path(path_to_file)
+    #path = os.path.dirname(os.path.abspath(__file__)) #получение пути к данному модулю
+    #techdemands_path = path+path_to_file #получение пути к файлу-источнику ТТ
+    with open(path,'r', encoding='utf-8') as Json_file:
+        templates = json.load(Json_file)
     return (templates)
-            
-def format_error(doc_type):
-    showerror('ERROR', 'ACTIVE DOCUMENT NOT {}'.format(doc_type))
 
 class KompasAPI:
     '''
@@ -40,6 +47,8 @@ class KompasAPI:
         self.const = gencache.EnsureModule("{2CAF168C-7961-4B90-9DA2-701419BEEFE3}", 0, 1, 0).constants
         self.const2D = gencache.EnsureModule("{75C9F5D0-B5B8-4526-8681-9903C567D2ED}", 0, 1, 0).constants
         if self.app.Visible is False:
+            showinfo('Информация',
+                     'Компас-3D запущен программой NerpaAI')
             self.app.Visible = True
     
     def get_part_dispatch(self):
