@@ -1,0 +1,1 @@
+pyinstaller --onefile --windowed --add-data "static;static" --add-data "resources;resources" --add-data "ReadMe.htm;." --icon "D:\GIT base\NerpaAI\NerpaICO.ico" NerpaAI.py

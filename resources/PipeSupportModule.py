@@ -25,7 +25,7 @@ class PipeSupportDots(KompasAPI):
         try:
             self.doc = self.app.ActiveDocument
             if self.doc:
-                if self.doc.DocumentType != 5:
+                if self.doc.DocumentType != 4:
                     return
             self.iPart7 = self.get_part_dispatch()
             self.lines_coords = []
@@ -50,7 +50,15 @@ class PipeSupportDots(KompasAPI):
             MathObject = iModelObject1.MathObject
             iMathCurve = self.module.IMathCurve3D(MathObject)
             if iMathCurve.GetGabarit()[0] is True:
-                self.lines_coords.append(iMathCurve.GetGabarit())
+                gabarits = iMathCurve.GetGabarit()
+                round_gabarits = [True, 0,0,0,0,0,0]
+                for i, coord in enumerate(gabarits):
+                    if i == 0:
+                        continue
+                    else:
+                        round_gabarits[i] = round(coord,2)
+
+                self.lines_coords.append(round_gabarits)
                 
         self.logging.info('Получены координаты линий. Всего обработано линий:{}'.format(len(self.lines_coords)))
         return True
@@ -93,5 +101,4 @@ class PipeSupportDots(KompasAPI):
             iModelObject.Update()
         self.logging.info('Точки расставлены')
                 
-                        
-PipeSupportDots()
+

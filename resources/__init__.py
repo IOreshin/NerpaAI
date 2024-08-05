@@ -1,3 +1,4 @@
+import lib
 
 from .AdaptModule import AdaltDetail, AdaptAssy
 from .BendModule import BTWindow

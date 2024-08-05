@@ -89,12 +89,14 @@ class AdaptParameters(KompasAPI):
         else:
             return '-'
 
-    def get_b_spec(self, od, l_prof, cv, profile_name, mRGS):
+    def get_b_spec(self, od, l_prof, cv, profile_name, pipe_mat):
         '''
         Функция для определения bSPEC объекта
         '''
         if od not in self.state_arr: #TUBE
-            return mRGS
+            for item in mRGS_PIPING:
+                if ['{}'.format(pipe_mat), od] == item[:2]:
+                    return item[2]
         elif l_prof not in self.state_arr: #MK
             if profile_name == "RAIL DIN 3015":
                 return "DIN EN ISO 3506-1"
@@ -115,12 +117,6 @@ class AdaptParameters(KompasAPI):
             return '-'
         else:
             return mST
-        
-    def get_mRGS(self, m_tube, od):
-        for item in mRGS_PIPING:
-            if ['{}'.format(m_tube), od] == item[:2]:
-                return item[2]
-        return '-'
     
     def get_bom_mto_params(self):
         '''
@@ -135,7 +131,12 @@ class AdaptParameters(KompasAPI):
             m_id = round(1000*(property_values['OD']-2*property_values['WT']),2) if property_values['OD'] not in self.state_arr else '-'
             m_nps = self.lookup_value(property_values['OD'], mNPS)
             m_sch = self.lookup_value(property_values['OD'], mSCH)
-            m_rgs = self.get_mRGS(property_values['PIPE_MAT'], property_values['OD'])
+
+            m_st = self.get_mst(property_values['L_PROFILE'], property_values['L_TUBE'])
+            b_spec = self.get_b_spec(property_values['OD'], property_values['L_PROFILE'],m_st,
+                                    property_values['PROFILE_NAME'], property_values['PIPE_MAT'])
+            m_rgs = b_spec
+            
             m_t = property_values['T'] if property_values['T'] not in self.state_arr else '-'
             m_width = round(property_values['WIDTH']*1000,5) if property_values['WIDTH'] not in self.state_arr else '-'
 
@@ -158,10 +159,6 @@ class AdaptParameters(KompasAPI):
                                     property_values['PIPE_MAT'],property_values['PROFILE_NAME'])
             
             b_mat = m_mat
-            m_st = self.get_mst(property_values['L_PROFILE'], property_values['L_TUBE'])
-
-            b_spec = self.get_b_spec(property_values['OD'], property_values['L_PROFILE'],m_st,
-                                    property_values['PROFILE_NAME'], m_rgs)
             
             mass = round(property_values['MASS'], 1)
             b_type = 'DETAIL' if property_values['bTYPE'] in self.state_arr else property_values['bTYPE']

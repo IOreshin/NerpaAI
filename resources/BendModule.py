@@ -20,7 +20,8 @@ class BTWindow(Window):
         self.method_combobox = None
         self.product_combobox = None
         self.products_names = ('KM',
-                              'SDU/CM')
+                              'SDU',
+                              'CM')
         self.methods_names = ('По линиям',
                                   'По точкам',
                                   'Авто')
@@ -150,10 +151,15 @@ class BendTableCalculator(KompasAPI):
             return
             
     def get_coordinate_info(self):
-        self.doc = self.app.ActiveDocument
-        if self.doc.DocumentType != 5:
+        try:
+            self.doc = self.app.ActiveDocument
+            if self.doc.DocumentType != 5:
+                self.app.MessageBoxEx('Активный документ не является сборкой',
+                                    'Ошибка', 64)
+                return
+        except Exception:
             self.app.MessageBoxEx('Активный документ не является сборкой',
-                                  'Ошибка', 64)
+                                    'Ошибка', 64)
             return
         
         iKompasDocument3D = self.module.IKompasDocument3D(self.doc)
@@ -208,14 +214,14 @@ class BendTableCalculator(KompasAPI):
             if i == 0:
                 zero_dots_coords.append([0,0,0])
             else:
-                if self.window_instance.product_combobox.get() == self.window_instance.products_names[1]: #если SDU/CM
+                if self.window_instance.product_combobox.get() == self.window_instance.products_names[2]: #если CM
                     current_point_coord = []
                     for n in range(3):
                         coordinate = round(point_coord[n]-first_coordinates[n])
                         current_point_coord.append(coordinate)
                     zero_dots_coords.append(current_point_coord)
 
-                else: #если выбран КМ и требуется корректировка
+                elif self.window_instance.product_combobox.get() == self.window_instance.products_names[0]: #если выбран КМ и требуется корректировка
                     current_point_coord = [0,0,0]
                     for n in range(3):
                         coordinate = round((point_coord[n]-first_coordinates[n]))
@@ -225,6 +231,19 @@ class BendTableCalculator(KompasAPI):
                             current_point_coord[2] = -coordinate
                         else:
                             current_point_coord[0] = coordinate
+                        
+                    zero_dots_coords.append(current_point_coord)
+
+                else: #если выбран SDU
+                    current_point_coord = [0,0,0]
+                    for n in range(3):
+                        coordinate = round((point_coord[n]-first_coordinates[n]))
+                        if n == 0:
+                            current_point_coord[0] = -coordinate
+                        elif n == 1:
+                            current_point_coord[1] = -coordinate
+                        else:
+                            current_point_coord[2] = coordinate
                         
                     zero_dots_coords.append(current_point_coord)
 
@@ -336,11 +355,10 @@ class BendTableCalculator(KompasAPI):
                 relative_point_coord[i+1].append(round(value[1]))
                 relative_point_coord[i+1].append(round(value[0]))
 
-        print(relative_point_coord)     
-        global FilePath
-        FilePath = ('{}\\BENDTEMP.txt').format(self.doc.Path)
+        global BendTempFilePath
+        BendTempFilePath = ('{}\\BENDTEMP.txt').format(self.doc.Path)
 
-        with open(FilePath, 'w') as temp_file:
+        with open(BendTempFilePath, 'w') as temp_file:
             for coordinates in relative_point_coord:
                 for coordinate in coordinates:
                     temp_file.write(str(coordinate)+',')
@@ -354,11 +372,17 @@ class BendTableWriter(KompasAPI):
         super().__init__()
     
     def write_bend_table_doc(self):
-        self.doc = self.app.ActiveDocument
-        if self.doc.DocumentType != 1:
+        try:
+            self.doc = self.app.ActiveDocument
+            if self.doc.DocumentType != 1:
+                self.app.MessageBoxEx('Активный документ не является чертежом',
+                                    'Ошибка', 64)
+                return
+        except:
             self.app.MessageBoxEx('Активный документ не является чертежом',
-                                  'Ошибка', 64)
+                                    'Ошибка', 64)
             return
+
         
         #проверка наличия видов модели в чертеже
         iKompasDocument2D = self.module.IKompasDocument2D(self.doc)
@@ -379,7 +403,7 @@ class BendTableWriter(KompasAPI):
         
         #считывания сформированных координат
         try: 
-            with open(FilePath, 'r') as TempFile: #чтение JSON файла с координатами
+            with open(BendTempFilePath, 'r') as TempFile: #чтение JSON файла с координатами
                 BendInfo = TempFile.readlines() #получение массива данных-координат
         except Exception:
             self.app.MessageBoxEx('Отсутствует сформированная BEND TABLE. Перейдите в сборку трубопровода и следуя инструкции выделите объекты трубы',
@@ -479,7 +503,7 @@ class BendTableWriter(KompasAPI):
         BendTable.Update()
         
         #удаление временного файла и объявление успешности работы
-        os.remove(FilePath)
+        os.remove(BendTempFilePath)
         self.app.MessageBoxEx('BEND TABLE добавлен в чертеж. Проверьте корректность выполнения операции',
                               'Успех', 64)
         return

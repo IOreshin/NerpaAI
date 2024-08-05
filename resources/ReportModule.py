@@ -157,8 +157,13 @@ class BOMMaker(KompasAPI):
         Основной метод для проверки коллекции видов в чертеже
         и добавления BOM таблицы
         '''
-        doc = self.app.ActiveDocument
-        if doc.DocumentType != 1:
+        try:
+            doc = self.app.ActiveDocument
+            if doc.DocumentType != 1:
+                self.app.MessageBoxEx('Активный документ не является чертежом',
+                                    'Ошибка', 64)
+                return
+        except Exception:
             self.app.MessageBoxEx('Активный документ не является чертежом',
                                   'Ошибка', 64)
             return

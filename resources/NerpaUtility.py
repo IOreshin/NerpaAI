@@ -4,8 +4,16 @@ import os, sys
 import json
 import pythoncom
 from win32com.client import Dispatch, gencache
-from tkinter.messagebox import showerror, showinfo
+from tkinter.messagebox import showinfo
+import threading
 
+class TimeoutException(Exception):
+    pass
+
+def timeout_handler():
+    raise TimeoutException('Прошло 10 секунд, выполнение прервано')
+
+ 
 def get_path():
     '''
     Получить путь в текущую директорию
@@ -47,9 +55,23 @@ class KompasAPI:
         self.const = gencache.EnsureModule("{2CAF168C-7961-4B90-9DA2-701419BEEFE3}", 0, 1, 0).constants
         self.const2D = gencache.EnsureModule("{75C9F5D0-B5B8-4526-8681-9903C567D2ED}", 0, 1, 0).constants
         if self.app.Visible is False:
-            showinfo('Информация',
-                     'Компас-3D запущен программой NerpaAI')
-            self.app.Visible = True
+            try:
+                timer = threading.Timer(10.0, timeout_handler)
+                timer.start()
+                try:
+                    showinfo('Информация',
+                            'Компас-3D запущен программой NerpaAI')
+                    self.app.Visible = True
+
+                finally:
+                    timer.cancel()
+            except TimeoutException as e:
+                showinfo('Информация',
+                         'Произошла ошибка при запуске Компас-3D. Попробуйте запустить его самостоятельно')
+            except Exception:
+                showinfo('Информация',
+                         'Произошла ошибка при запуске Компас-3D. Попробуйте запустить его самостоятельно')
+            
     
     def get_part_dispatch(self):
         '''
@@ -86,7 +108,8 @@ class KompasAPI:
                 else:
                     return None
         else:
-            showerror('Error', 'No bodies in active document')
+            self.app.MessageBoxEx('В активном документе нет тел',
+                                  'Ошибка', 64)
             return
     
     def get_progress_bar(self):

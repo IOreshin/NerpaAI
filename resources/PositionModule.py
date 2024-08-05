@@ -135,5 +135,5 @@ class SetPositions(KompasAPI):
     def set_positions(self):
         if self.remove_spec_desc():
             self.sort_set_positions()
-            self.app.MessageBoxEx('Позиции установлены. Проверьте корректность выполнения операции. Время операции - {} сек.'
+            self.app.MessageBoxEx('Позиции установлены. Проверьте корректность выполнения операции'
                                 ,'Успех', 64)
