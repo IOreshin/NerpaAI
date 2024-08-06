@@ -74,7 +74,7 @@ class TranslateCDW(KompasAPI):
                                               for original_dir_item in original_dir_items[:-1])
                 
                 for rus_path in self.rus_paths:
-                    rus_doc = self.destroy_views(rus_path)
+                    rus_doc = self.open_doc_and_destroy_views(rus_path)
                     self.get_drawing_operations(rus_doc)
 
                     rus_doc.Close(1)
@@ -165,7 +165,7 @@ class TranslateCDW(KompasAPI):
 
         return views_dispatchs
 
-    def destroy_views(self, rus_path):
+    def open_doc_and_destroy_views(self, rus_path):
         '''
         Функция разрушения всех видов на чертеже
         '''
@@ -242,7 +242,7 @@ class TranslateCDW(KompasAPI):
         rows_count = table.RowsCount
         table_range = table.Range(0,0,rows_count,columns_count)
         cells = table_range.Cells
-        for cell in cells:
+        for cell in cells: 
             cell_format = self.module.ICellFormat(cell)
             cell_format.ReadOnly = False
             table_object.Update()
@@ -320,6 +320,7 @@ class TranslateCDW(KompasAPI):
                 view_inscription.Update()
 
             if text_line.Str.startswith('^'):
+                print(text_line.Str)
                 for n in range(text_line.Count):
                     text_item = text_line.TextItem(n)
                     text_font = self.module.ITextFont(text_item)
