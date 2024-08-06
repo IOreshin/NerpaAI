@@ -1,82 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from resources import *
-import pythoncom
+
 import tkinter as tk
 from tkinter import ttk
 import webbrowser
-from PIL import Image, ImageTk
-import threading
 
-class SplashScreen(Window):
-    def __init__(self, parent, on_close):
-        super().__init__()
-        self.window = tk.Toplevel(parent)
-        self.window.title("NerpaAI")
-        self.window.iconbitmap(self.pic_path)
- 
-        self.window.resizable(False, False)
-        self.window.attributes("-topmost", True)  # Убедитесь, что окно поверх всех
-
-        # Загрузка и отображение изображения PNG
-        self.image_path = get_resource_path(
-            'resources\\pic\\ICO RGSH PS 400X400.png')  # Укажите путь к вашему PNG файлу
-        self.image = Image.open(self.image_path)
-        self.photo = ImageTk.PhotoImage(self.image)
-
-        self.label = tk.Label(self.window, image=self.photo)
-        self.label.pack(expand=True, fill=tk.BOTH)
-        #self.window.update_idletasks()
-        w, h = self.get_center_window(self.window)
-        self.window.geometry('+{}+{}'.format(w, h))
-
-        # Запуск таймера для закрытия окна
-        self.window.after(3000, self.close)
-        self.on_close = on_close
-
-    def close(self):
-        self.window.destroy()
-        self.on_close()
-
-class LoadingWindow(Window):
-    def __init__(self, parent):
-        super().__init__()
-        self.window = tk.Toplevel(parent)
-        self.window.title("Ожидание")
-        self.window.iconbitmap(self.pic_path)
-        #self.window.geometry("200x100")
-        self.window.resizable(False, False)
-        self.window.grab_set()  # Захватываем фокус на это окно
-        self.window.attributes("-topmost", True)  # Убедитесь, что окно поверх всех
-
-        self.gif_path = get_resource_path('resources\\pic\\NerpaLoad.gif')  # Укажите путь к вашему GIF
-        self.gif = Image.open(self.gif_path)
-        self.frames = [ImageTk.PhotoImage(self.gif.copy().convert('RGBA'))]
-        try:
-            while True:
-                self.gif.seek(len(self.frames))
-                self.frames.append(ImageTk.PhotoImage(self.gif.copy().convert('RGBA')))
-        except EOFError:
-            pass
-
-        #self.window.update_idletasks()
-        w, h = self.get_center_window(self.window)
-        self.window.geometry('+{}+{}'.format(w, h))
-
-        self.label_image = tk.Label(self.window)
-        self.label_image.pack()
-
-        self.update_image(0)
-        self.current_frame = 0
-    
-    def update_image(self, frame_number):
-        self.label_image.config(image=self.frames[frame_number])
-        self.current_frame = (frame_number + 1) % len(self.frames)
-        self.window.after(25, self.update_image, self.current_frame)  # Обновление кадра каждые 100 мс
-
-    def close(self):
-        self.window.grab_release()  # Отпускаем захват фокуса
-        self.window.destroy()
 
 class MainWindow(Window):
     def __init__(self):
@@ -87,33 +16,8 @@ class MainWindow(Window):
         self.root.resizable(False, False)
         self.root.iconbitmap(self.pic_path)
         self.root.attributes("-topmost", True)
-        self.root.withdraw() # Скрыть главное окно до завершения заставки
 
-        splash_thread = threading.Thread(target=self.show_splash_screen)
-        splash_thread.start()
-
-        
-    def show_splash_screen(self):
-        splash = SplashScreen(self.root, self.show_main_window)
-        
-
-    def show_main_window(self):
-        self.root.deiconify()  # Показать главное окно
         self.initialize_ui()
-    
-
-    def execute_with_loading(self, func, *args, **kwargs):
-        def task():
-            pythoncom.CoInitialize()
-            try:
-                func(*args, **kwargs)
-            finally:
-                pythoncom.CoUninitialize()
-                self.root.after(0, loading_window.close)
-        
-        loading_window = LoadingWindow(self.root)  # Создание окна уведомления
-        thread = threading.Thread(target=task).start()
-
 
     def check_add_prop(self):
         func = PropertyManager()
@@ -159,7 +63,7 @@ class MainWindow(Window):
             {'text': 'Адаптировать сборку насквозь', 'frame': 'assembly', 
              'command': self.skip, 'state': 'disabled'},
             {'text': 'Адаптировать активную сборку', 'frame': 'assembly', 
-             'command': lambda: self.execute_with_loading(AdaptAssy), 'state': 'normal'},
+             'command': AdaptAssy, 'state': 'normal'},
             {'text': 'Адаптировать активную деталь', 'frame': 'assembly', 
              'command': AdaltDetail, 'state': 'normal'},
             {'text': 'Добавить свойства ISO-RGSH', 'frame': 'assembly', 
@@ -169,7 +73,7 @@ class MainWindow(Window):
             {'text': 'Создать МТО', 'frame': 'extra', 
              'command': MTOMaker, 'state': 'normal'},
             {'text': 'Установить позиции в активной сборке', 'frame': 'drawing', 
-             'command': lambda: self.execute_with_loading(SetPositions), 'state': 'normal'},
+             'command': SetPositions, 'state': 'normal'},
             {'text': 'Добавить тех. требования', 'frame': 'drawing', 
              'command': TechDemandWindow, 'state': 'normal'},
             {'text': 'Добавить таблицу гибов', 'frame': 'drawing', 

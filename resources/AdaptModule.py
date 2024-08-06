@@ -342,5 +342,3 @@ class AdaltDetail(KompasAPI):
             if bom_mto_params[id[1]]:
                 detail_object.set_prp_value(id[0], bom_mto_params[id[1]])
             iPart7.Update()
-
-

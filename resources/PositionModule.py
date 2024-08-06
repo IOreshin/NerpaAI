@@ -111,7 +111,7 @@ class SetPositions(KompasAPI):
         #установка позиций компонентам
         parts = self.iPart7.PartsEx(self.const.ksAllParts)
         if parts is not None:
-            progress_bar.start(0.0, len(parts),'',True)
+            progress_bar.Start(0.0, len(parts),'',True)
             for i, part in enumerate(parts):
                 if part.IsLayoutGeometry is not False and part.CreateSpcObjects:
                     self.set_item_pos(parts_list, part)
