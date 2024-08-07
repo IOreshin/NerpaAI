@@ -60,12 +60,6 @@ class TranslateCDW(KompasAPI):
         file_list = root.tk.splitlist(filepaths)
         
         if file_list:
-            #try:
-               # os.mkdir(self.temp_dir)
-            #except FileExistsError:
-             #   pass
-
-
             start_time = time.time()
             save_state = self.resave_docs(file_list)
             if save_state:
@@ -80,16 +74,12 @@ class TranslateCDW(KompasAPI):
                     rus_doc.Close(1)
                 end_time = time.time()
                 exuctution_time = round(end_time-start_time,2)
-                
-                #if self.copy_to_original_dir():
+
                 showinfo('Информация',
                     'Выбранные файлы созданы в версии RUS и переведены на русский язык.Проверьте и докорректируйте чертежи.Перевод выполнен за {} сек'
                     .format(exuctution_time))
+                return
 
-               # else:
-                #    showerror('Ошибка',
-                #             'Во время копирования в {} произошла ошибка'
-                 #            .format(self.original_dir_path))
 
     def resave_docs(self, filepaths):
         '''
@@ -262,31 +252,10 @@ class TranslateCDW(KompasAPI):
             
             #случай нескольких строк в ячейке таблицы
             elif cell_text.Count > 1:
-                TextLines = cell_text.TextLines
-                full_en_text = []
-                for i,TextLine in enumerate(TextLines):
-                    for n in range(TextLine.Count):
-                        TextItem = TextLine.TextItem(n)
-                        full_en_text.append([TextItem.Str, i, n])
+               pass
+               
 
-                en_words = [word[0] for word in full_en_text]
-                en_str = " ".join(en_words)
-                ru_str = self.edit_mark_str(en_str)
-                ru_words = ru_str.split(' ')
-                #случай совпадения количества слов в русской и английской версиях
-                if len(en_words) == len(ru_words):
-                    for i,rus_word in enumerate(ru_words):
-                        TextLine = cell_text.TextLine(full_en_text[i][1])
-                        TextItem = TextLine.TextItem(full_en_text[i][2])
-                        TextItem.Str = rus_word
-                        TextItem.Update()
-                else:
-                    cell_text.Clear()
-                    for rus_word in ru_words:
-                        TextLine = cell_text.Add()
-                        TextItem = TextLine.Add()
-                        TextItem.Str = rus_word
-                        TextItem.Update()
+
             else:
                 continue
 
@@ -314,22 +283,24 @@ class TranslateCDW(KompasAPI):
         view_text = self.module.IText(view_inscription)
         for i in range(view_text.Count):
             text_line = view_text.TextLine(i)
-            if not text_line.Str.startswith('^'):
+            text_line_str = text_line.Str
+            if text_line_str.startswith('^'):
+                continue
+
+            else:
                 edited_text = self.edit_symbol_str(text_line.Str)
                 text_line.Str = edited_text
                 view_inscription.Update()
 
-            if text_line.Str.startswith('^'):
-                print(text_line.Str)
-                for n in range(text_line.Count):
-                    text_item = text_line.TextItem(n)
-                    text_font = self.module.ITextFont(text_item)
-                    text_font.Height = 7.0
-                    text_font.Italic = True
-                    view_inscription.Update()
-                    text_item.Update()
-                    
 
+        if view_text.TextLine(0).Str.startswith('^'):
+            text_line = view_text.TextLine(0)
+            for n in range(text_line.Count):
+                text_item = text_line.TextItem(n)
+                text_font = self.module.ITextFont(text_item)
+                text_font.Height = 7.0
+                text_item.Update()
+                    
             view_inscription.Update()
 
     def translate_stamp(self, doc_dispatch):

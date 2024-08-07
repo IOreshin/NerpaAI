@@ -5,6 +5,7 @@ from resources import *
 import tkinter as tk
 from tkinter import ttk
 import webbrowser
+import sys
 
 
 class MainWindow(Window):
@@ -17,7 +18,13 @@ class MainWindow(Window):
         self.root.iconbitmap(self.pic_path)
         self.root.attributes("-topmost", True)
 
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
         self.initialize_ui()
+
+    def on_closing(self):
+        self.root.destroy()
+        sys.exit()
 
     def check_add_prop(self):
         func = PropertyManager()
