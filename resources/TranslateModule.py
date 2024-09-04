@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from .NerpaUtility import KompasAPI
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import shutil
 from .ConstantsRGSH import SHEET_FORMATS as formats
 from .DictionaryModule import DBManager
@@ -33,7 +33,7 @@ class TranslateCDW(KompasAPI):
                                    )
         self.marking_interface = ('DrawingText',
                                   )
-        
+
         self.translate_cdw_docs()
 
     def get_dictionary(self):
@@ -44,7 +44,7 @@ class TranslateCDW(KompasAPI):
         dictionary = db_mng.get_dictionary()
         db_mng.conn.close()
         return dictionary
-    
+
     def translate_cdw_docs(self):
         '''
         Основная функция модуля. Запускает окно выбора файлов.
@@ -55,85 +55,55 @@ class TranslateCDW(KompasAPI):
         root.withdraw()
 
         filepaths = filedialog.askopenfilenames(
-            title = "Выбор чертежей", 
+            title = "Выбор чертежей",
             filetypes = [("КОМПАС-Чертежи", "*.cdw")])
         file_list = root.tk.splitlist(filepaths)
-        
+
         if file_list:
             start_time = time.time()
             save_state = self.resave_docs(file_list)
             if save_state:
                 original_dir_items = file_list[0].split('/')
-                self.original_dir_path = '\\'.join(original_dir_item 
+                self.original_dir_path = '\\'.join(original_dir_item
                                               for original_dir_item in original_dir_items[:-1])
-                
+
                 for rus_path in self.rus_paths:
                     rus_doc = self.open_doc_and_destroy_views(rus_path)
                     self.get_drawing_operations(rus_doc)
 
                     rus_doc.Close(1)
+
                 end_time = time.time()
                 exuctution_time = round(end_time-start_time,2)
 
-                showinfo('Информация',
-                    'Выбранные файлы созданы в версии RUS и переведены на русский язык.Проверьте и докорректируйте чертежи.Перевод выполнен за {} сек'
-                    .format(exuctution_time))
-                return
+                if messagebox.askokcancel('Завершение работы', 
+                                          'Предварительный перевод чертежей выполнен за {} сек. Хотите открыть файлы?'.format(exuctution_time)):
+                    for rus_path in self.rus_paths:
+                        try:
+                            self.iDocuments.Open(rus_path, True, False)
+                        except Exception as e:
+                            print(e)
+                            continue
 
+                return
 
     def resave_docs(self, filepaths):
         '''
         Метод копирования исходных файлов.
-        Дополнительно записывает пути файлов в 
+        Дополнительно записывает пути файлов в
         drawing_path_rus
         '''
         try:
             for drawing_path in filepaths:
-                drawing_path_rus = drawing_path[:-4]+' RUS.cdw'
-                self.rus_paths.append(drawing_path_rus)
-                shutil.copyfile(drawing_path, drawing_path_rus)
+                if 'RUS' not in drawing_path:
+                    drawing_path_rus = drawing_path[:-4]+' RUS.cdw'
+                    self.rus_paths.append(drawing_path_rus)
+                    shutil.copyfile(drawing_path, drawing_path_rus)
             return True
         except:
             showerror('Ошибка', 'Ошибка копирования выбранных компонентов')
             return False
 
-    def resave_docs_(self, filepaths):
-        '''
-        Метод копирования исходных файлов.
-        Дополнительно записывает пути файлов в 
-        drawing_path_rus
-        '''
-        try:
-            for drawing_path in filepaths:
-                doc_name_items = drawing_path.split('/')
-                doc_name = doc_name_items[-1]
-                name, extension = os.path.splitext(doc_name)
-                path_items = [self.temp_dir,'\\',name, ' RUS.cdw']
-                drawing_path_rus = ''.join(path_items)
-                self.rus_paths.append(drawing_path_rus)
-                shutil.copyfile(drawing_path, drawing_path_rus)
-            return True
-        except:
-            showerror('Ошибка', 'Ошибка копирования выбранных компонентов')
-            return False
-
-    def copy_to_original_dir(self):
-        #try:
-            for rus_path in self.rus_paths:
-                doc_name_items = rus_path.split('\\')
-                doc_name = '\\'+doc_name_items[-1]
-                print(rus_path)
-                print(self.original_dir_path+doc_name)
-                shutil.copyfile(rus_path, self.original_dir_path+doc_name)
-            
-
-            shutil.rmtree(self.temp_dir)
-            #os.rmdir(self.temp_path)
-            return True
-        
-        #except Exception:
-        #    return False
-  
     def get_views_collection(self, doc_dispatch):
         '''
         Метод получения всех возможных видов на чертеже.
@@ -164,7 +134,9 @@ class TranslateCDW(KompasAPI):
         iDoc2D1 = self.module.IKompasDocument2D1(iDoc2D)
         views = self.get_views_collection(iDoc)
         for view in views:
-            iDoc2D1.DestroyObjects(view) 
+            iBreakViewParam = self.module.IBreakViewParam(view)
+            if iBreakViewParam.BreaksCount == 0:
+                iDoc2D1.DestroyObjects(view)
 
         return iDoc
 
@@ -173,15 +145,50 @@ class TranslateCDW(KompasAPI):
         Функция для запуска прогона перевода
         '''
         views = self.get_views_collection(doc_dispatch)
-        for view in views:
-            self.get_container_operations('ISymbols2DContainer', view)
-            self.drawing_container_operations(view)
-            self.translate_bom_table(view, doc_dispatch)
-            self.translate_drawing_tables(view)
+        try:
+            progress_bar = self.get_progress_bar()
+            progress_bar.Start(0.0, len(views), '', True)
+            for i, view in enumerate(views):
+                progress_bar.SetProgress(i, '', True)
+                if view.Name not in ['BEND TABLE TYP', 'BEND TABLE CS']:
+                    self.get_container_operations('ISymbols2DContainer', view)
+                    self.drawing_container_operations(view)
+                    self.translate_bom_table(view, doc_dispatch)
+                    self.translate_drawing_tables(view)
+                else:
+                    self.change_fragment(view, doc_dispatch)
 
-        self.translate_stamp(doc_dispatch)
-        self.translate_tech_demands(doc_dispatch)
-        #self.change_layout_sheets(doc_dispatch)
+            self.translate_stamp(doc_dispatch)
+            self.translate_tech_demands(doc_dispatch)
+            self.change_layout_sheets(doc_dispatch)
+            progress_bar.Stop('', True)
+        except Exception as e:
+            print(e)
+            progress_bar.Stop('', True)
+
+    def change_fragment(self, view, doc_dispatch):
+        doc_name = doc_dispatch.Name
+        SDU_flag = False
+        if 'SDU' in doc_name:
+            SDU_flag = True
+
+        DrawingContainer = self.module.IDrawingContainer(view)
+        InsertionObjects = DrawingContainer.InsertionObjects
+        InsertionObject = InsertionObjects.InsertionObject(0)
+        if InsertionObject:
+            InsertionDefinition = InsertionObject.InsertionDefinition
+            if view.Name in ['BEND TABLE TYP']:
+                pass
+                #InsertionDefinition.FileName = 'C:\\Users\\Ivan Oreshin\\Downloads\\Перев\\BEND_TABLE_TYP_RUS.frw'
+            if view.Name in ['BEND TABLE CS']:
+                if SDU_flag:
+                    pass
+                    #InsertionDefinition.FileName = 'C:\\Users\\Ivan Oreshin\\Downloads\\Перев\\BEND_TABLE_CS_SDU_RUS.frw'
+                else:
+                    pass
+                    #InsertionDefinition.FileName = 'C:\\Users\\Ivan Oreshin\\Downloads\\Перев\\BEND_TABLE_CS_RUS.frw'
+            
+            view.Update()
 
     def destroy_object(self, doc_dispatch, object):
         '''
@@ -232,7 +239,7 @@ class TranslateCDW(KompasAPI):
         rows_count = table.RowsCount
         table_range = table.Range(0,0,rows_count,columns_count)
         cells = table_range.Cells
-        for cell in cells: 
+        for cell in cells:
             cell_format = self.module.ICellFormat(cell)
             cell_format.ReadOnly = False
             table_object.Update()
@@ -249,12 +256,42 @@ class TranslateCDW(KompasAPI):
                         edited_text = self.edit_symbol_str(iTextItem.Str)
                         iTextItem.Str = edited_text
                         iTextItem.Update()
-            
+
             #случай нескольких строк в ячейке таблицы
             elif cell_text.Count > 1:
-               pass
-               
+                TextLines = cell_text.TextLines
+                full_en_text = []
+                for i, TextLine in enumerate(TextLines):
+                    for n in range(TextLine.Count):
+                        TextItem = TextLine.TextItem(n)
+                        #добавление в массив английского выражения конструкции:
+                        # [текст, строка, порядок в строке]
+                        full_en_text.append([TextItem.Str, i, n])
 
+                en_words = [word[0] for word in full_en_text]
+                en_str = ' '.join(en_words)
+                ru_str = self.edit_mark_str(en_str)
+
+                ru_words = ru_str.split(' ')
+
+                #если совпадает кол-во слов в русском и английском
+                if len(en_words) == len(ru_words):
+                    for i, rus_word in enumerate(ru_words):
+                        TextLine = cell_text.TextLine(full_en_text[i][1])
+                        TextItem = TextLine.TextItem(full_en_text[i][2])
+                        TextItem.Str = rus_word
+                        TextItem.Update()
+                else:
+                    cell_text.Clear()
+                    TextLine = cell_text.Add()
+                    for i,rus_word in enumerate(ru_words):
+                        TextItem = TextLine.Add()
+                        TextItem.Str = rus_word
+                        if i != len(ru_words)-1:
+                            TextItem = TextLine.Add()
+                            TextItem.Str = ' '
+                            TextItem.Update()
+                        TextItem.Update()
 
             else:
                 continue
@@ -266,43 +303,30 @@ class TranslateCDW(KompasAPI):
             for i in range(iDrawingTexts.Count):
                 iDrawingText = iDrawingTexts.DrawingText(i)
                 iDrawingText_text = self.module.IText(iDrawingText)
-                #случай, когда в названии вида вставлена ссылка
-                if iDrawingText_text.Str.startswith('^'):
-                    self.translate_view_designation(view)
-                    continue
 
                 if iDrawingText_text.Str and not iDrawingText_text.Str.startswith('^'):
-                    edited_text = self.edit_mark_str(iDrawingText_text.Str)
-                    iDrawingText_text.Str = edited_text
-
-                iDrawingText.Update()
-
-    def translate_view_designation(self, view):
-        view_designation = self.module.IViewDesignation(view)
-        view_inscription = view_designation.DrawingText
-        view_text = self.module.IText(view_inscription)
-        for i in range(view_text.Count):
-            text_line = view_text.TextLine(i)
-            text_line_str = text_line.Str
-            if text_line_str.startswith('^'):
-                continue
-
-            else:
-                edited_text = self.edit_symbol_str(text_line.Str)
-                text_line.Str = edited_text
-                view_inscription.Update()
-
-
-        if view_text.TextLine(0).Str.startswith('^'):
-            text_line = view_text.TextLine(0)
-            for n in range(text_line.Count):
-                text_item = text_line.TextItem(n)
-                text_font = self.module.ITextFont(text_item)
-                text_font.Height = 7.0
-                text_item.Update()
-                    
-            view_inscription.Update()
-
+                    #ЭКСПЕРИМЕНТАЛЬНЫЙ БЛОК
+                    view_name_flag = False
+                    iTextLine = iDrawingText_text.TextLine(0)
+                    for TextItem in iTextLine.TextItems:
+                        if TextItem.Str.strip() in ['ISO VIEW', 'VIEW', 'TOP VIEW', 
+                                            'BOTTOM VIEW', 'ISO VIEW BOTTOM',
+                                            'STB VIEW', 'FORE VIEW',
+                                            'PORT VIEW', 'AFT VIEW']:
+                            view_name_flag = True
+                    #НЕ ИСПОЛЬЗОВАТЬ ЕСЛИ БУДУТ ПРОБЛЕМЫ
+                    if not view_name_flag:
+                        edited_text = self.edit_mark_str(iDrawingText_text.Str)
+                        iDrawingText_text.Str = edited_text
+                        iDrawingText.Update()
+                    if view_name_flag:
+                        iTextLine = iDrawingText_text.TextLine(0)
+                        for TextItem in iTextLine.TextItems:
+                            iTextFont = self.module.ITextFont(TextItem)
+                            iTextFont.Height = 7
+                            TextItem.Update()
+                            iDrawingText.Update()
+ 
     def translate_stamp(self, doc_dispatch):
         iLayoutSheets = doc_dispatch.LayoutSheets
         for i in range(iLayoutSheets.Count):
@@ -315,7 +339,7 @@ class TranslateCDW(KompasAPI):
                     edited_text = self.edit_mark_str(text.Str)
                     text.Str = edited_text
                     iStamp.Update()
-                
+
                 text_cell_counter += 1
 
     def translate_tech_demands(self, doc_dispatch):
@@ -324,19 +348,20 @@ class TranslateCDW(KompasAPI):
         TechDemands = iDrawingDocument.TechnicalDemand
         if TechDemands.IsCreated is False:
             return
-        
+
         key_words = ['NOTES',
                      'CONJUNCTIONS',
                      '3D MODEL',
                      'CONJUNCTION']
         TechText = TechDemands.Text
         TextLines = TechText.TextLines
-        
+
         for TextLine in TextLines:
             if TextLine:
-                if any(key_word in TextLine.Str for key_word in key_words): 
+                if any(key_word in TextLine.Str for key_word in key_words):
                     TextLine.Delete()
                     TechDemands.Update()
+
 
         TechText = TechDemands.Text
         TextLines = TechText.TextLines
@@ -356,11 +381,39 @@ class TranslateCDW(KompasAPI):
 
         TechDemands.Delete()
         TechDemands.Update()
+        tube_bending_flag = False
         for tech_paragraph in tech_paragraphs:
             edited_text = self.edit_mark_str(tech_paragraph)
             TextLine = TechText.Add()
             TextLine.Str = edited_text
             TextLine.Numbering = 1
+            if 'RGS 3.2.4.' in edited_text:
+                tube_bending_flag = True
+        
+        if tube_bending_flag is True:
+            TextLine = TechText.Add()
+            TextLine.Str = 'ЧТО-ТО ХОТЕЛИ ДОБАВИТЬ.'
+            TextLine.Numbering = 1
+
+            TextLine = TechText.Add()
+            TextLine.Str = 'ДОПОЛНИТЕЛЬНЫЕ ПОЯСНЕНИЯ:'
+            TextLine.Numbering = 1
+
+            TextLine = TechText.Add()
+            TextLine.Str = '    - ISO VIEW - ИЗОМЕТРИЧЕСКИЙ ВИД.'
+            TextLine.Numbering = 0
+            TextLine = TechText.Add()
+            TextLine.Str = '    - NPS - РАЗМЕР В ДЮЙМАХ.'
+            TextLine.Numbering = 0
+            TextLine = TechText.Add()
+            TextLine.Str = '    - OD - НАРУЖНЫЙ ДИАМЕТР ТРУБЫ.'
+            TextLine.Numbering = 0
+            TextLine = TechText.Add()
+            TextLine.Str = '    - WT - ТОЛЩИНА СТЕНКИ ТРУБЫ.'
+            TextLine.Numbering = 0
+            TextLine = TechText.Add()
+            TextLine.Str = '    - L - ДЛИНА ТРУБЫ.'
+            TextLine.Numbering = 0
 
         iLayoutSheets = doc_dispatch.LayoutSheets
         iLayoutSheet = iLayoutSheets.Item(0)
@@ -373,7 +426,10 @@ class TranslateCDW(KompasAPI):
         iLayoutSheets = doc_dispatch.LayoutSheets
         for i in range(iLayoutSheets.Count):
             iLayoutSheet = iLayoutSheets.Item(i)
-            #iLayoutSheet.LayoutStyleNumber = 2
+            if i == 0:
+                iLayoutSheet.LayoutStyleNumber = 31
+            else:
+                iLayoutSheet.LayoutStyleNumber = 32
             iLayoutSheet.Update()
 
     def get_container_operations(self, container_name, view):
@@ -406,7 +462,7 @@ class TranslateCDW(KompasAPI):
             if str_to_edit.endswith(' '):
                 return edited_text+' '
             return edited_text
-        
+
         #если фраза состоит из строк
         if '\n' in str_to_edit:
             edited_text = ''
@@ -416,7 +472,7 @@ class TranslateCDW(KompasAPI):
             return edited_text
 
         return self.edit_symbol_str(str_to_edit)
-            
+
     def edit_symbol_str(self, str_to_edit: str):
         if str_to_edit.strip() in self.DICTIONARY.keys():
             edited_text = self.DICTIONARY[str_to_edit.strip()]
@@ -426,17 +482,20 @@ class TranslateCDW(KompasAPI):
                 return edited_text+' '
 
             return edited_text
-        
+
         edited_text = self.edit_single_str(str_to_edit)
 
         return edited_text
-    
+
     def edit_single_str(self, str_to_edit:str):
         split_text = str_to_edit.split(' ')
         edited_text = ''
         for split_item in split_text:
             if split_item == 'PLACES':
                 edited_text = self.get_correct_form(split_text[0], split_text[1])
+
+            elif split_item == 'TUBE':
+                edited_text += 'ТРУБА'
 
             elif split_item in self.DICTIONARY.keys():
                 edited_text += self.DICTIONARY[split_item]
@@ -460,12 +519,12 @@ class TranslateCDW(KompasAPI):
                 if self.number_space:
                     return " {} МЕСТ".format(number)
                 return "{} МЕСТ".format(number)
-            
+
             elif number % 10 == 1:
                 if self.number_space:
                     return " {} МЕСТО".format(number)
                 return "{} МЕСТО".format(number)
-            
+
             elif 2 <= number % 10 <= 4:
                 if self.number_space:
                     return " {} МЕСТА".format(number)

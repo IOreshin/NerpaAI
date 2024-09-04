@@ -25,7 +25,7 @@ class DictionaryWindow(Window):
         #создание основного окна
         self.dict_root = tk.Tk()
         self.dict_root.title(self.window_name+' : RGSH Dictionary Editor')
-        self.dict_root.iconbitmap(self.pic_path)
+        #self.dict_root.iconbitmap(self.pic_path)
         self.dict_root.resizable(False, False)
         self.dict_root.attributes("-topmost", True)
 
@@ -179,7 +179,7 @@ class AddWord(Window):
         #создание основного окна
         self.add_word_root = tk.Tk()
         self.add_word_root.title(self.window_name)
-        self.add_word_root.iconbitmap(self.pic_path)
+        #self.add_word_root.iconbitmap(self.pic_path)
         self.add_word_root.resizable(False, False)
         self.add_word_root.attributes("-topmost", True)
 

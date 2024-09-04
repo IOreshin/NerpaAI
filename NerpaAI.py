@@ -15,7 +15,7 @@ class MainWindow(Window):
         self.root = tk.Tk()
         self.root.title(self.window_name)
         self.root.resizable(False, False)
-        self.root.iconbitmap(self.pic_path)
+        #self.root.iconbitmap(self.pic_path)
         self.root.attributes("-topmost", True)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
