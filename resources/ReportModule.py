@@ -51,7 +51,7 @@ class MTOMaker(KompasAPI):
         iReport.Rebuild()
         iReport.SaveAs(report_filename)
 
-        msg = 'MTO is saved in:'+str(report_filename)
+        msg = 'MTO сохранено в:'+str(report_filename)
         self.app.MessageBoxEx(msg, 'Успех', 64)
 
 

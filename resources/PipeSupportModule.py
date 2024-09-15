@@ -2,7 +2,7 @@
 
 from .NerpaUtility import KompasAPI, get_path
 
-import logging, yaml, datetime, getpass
+import logging, datetime, getpass
 
 
 class PipeSupportDots(KompasAPI):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .NerpaUtility import KompasAPI, get_path, get_resource_path
+from .NerpaUtility import KompasAPI, get_path
 
 class PropertyManager(KompasAPI):
     '''
@@ -36,15 +36,15 @@ class PropertyManager(KompasAPI):
         Функция для проверки и добавления свойств RGSH
         '''
         try:
-            lib_path = get_resource_path('resources/lib/PROPERTIES.lpt')
+            lib_path = get_path()+'\\lib\\PROPERTIES.lpt'
             lib_properties = self.iPropertyMng.GetProperties(lib_path)
             doc_properties = self.get_doc_properties()
             for lib_prop in lib_properties:
                 if lib_prop.Name not in doc_properties:
                     self.iPropertyMng.AddProperty(self.kompas_doc, lib_prop)
 
-        except Exception:
-            self.app.MessageBoxEx('Ошибка в пути к библиотеке свойств',
+        except Exception as e:
+            self.app.MessageBoxEx('Ошибка в пути к библиотеке свойств: {}'.format(e),
                                   'Ошибка', 64)
             return
 

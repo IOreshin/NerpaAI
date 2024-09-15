@@ -9,4 +9,4 @@ from .TechDemandsModule import TechDemandWindow
 from .TranslateModule import TranslateCDW
 from .WindowModule import Window
 from .PropertyMngModule import PropertyManager
-from .NerpaUtility import get_resource_path
+from .NerpaUtility import get_path

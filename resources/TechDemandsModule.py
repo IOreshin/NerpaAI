@@ -28,7 +28,7 @@ class TechDemandWindow(Window):
         help_label = tk.Label(frame1, text = "Выберите из списка шаблон ТТ и нажмите кнопку <Добавить> ", state=["normal"])
         help_label.grid(row = 0, column = 1, sticky = 'e', pady = 2, padx = 5)
 
-        self.templates = read_json('resources/lib/TECHDEMANDS.JSON')
+        self.templates = read_json('/lib/TECHDEMANDS.JSON')
 
         templates_names = []
         for name, text in self.templates.items():

@@ -23,7 +23,7 @@ SOURCE_PROPERTIES_ID = (
 
 B_SPEC =        ('RGS.5.500.TUBE',
                 'RGS.5.500.8.2', #PROFILE CV1
-                'RGS.5.500.8.3') #PROFILE CV2
+                'RGS.5.500.8.4') #PROFILE CV2
 
 mRGS_PIPING = (['API 5L X65', 73.0, 'RGS 5.402.2.30'], #M_tube, mOD, mRGS #MEG
                    ['25Cr Duplex SS', 508.0, 'RGS 5.434.4.1'],#M_tube, mOD, mRGS #20" PROD
@@ -33,6 +33,10 @@ mRGS_PIPING = (['API 5L X65', 73.0, 'RGS 5.402.2.30'], #M_tube, mOD, mRGS #MEG
                    ['316L', 19.05, 'RGS 5.431.3.3'],#M_tube, mOD, mRGS
                    ['25Cr Duplex SS', 19.05, 'RGS 5.434.6.1'],#M_tube, mOD, mRGS
                    ['316L', 48.3, 'RGS 5.431.3.5'],#M_tube, mOD, mRGS
+                   ['316L', 12.7, 'RGS 5.431.3.5'],#M_tube, mOD, mRGS
+                   ['25Cr Duplex SS', 12.7, 'RGS 5.434.6.2'],#M_tube, mOD, mRGS
+                   ['316L', 9.5, 'RGS 5.431.3.6'],#M_tube, mOD, mRGS
+                   ['316L', 33.4, 'RGS 5.431.3.5'],#M_tube, mOD, mRGS
                 )
 
 mNPS =          ([9.50, '0.375'], #OD, NPS

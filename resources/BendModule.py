@@ -522,7 +522,7 @@ class BTHelpWindow(Window):
         help_frame = ttk.LabelFrame(help_root, borderwidth = 5, relief = 'solid', text = 'Справка')
         help_frame.grid(row = 0, column = 0, pady = 5, padx = 5, sticky = 'nsew')
         
-        HelpPages = read_json('resources/lib/HELPPAGES.json' )
+        HelpPages = read_json('/lib/HELPPAGES.json' )
         HelpText = ''
         for item, text in HelpPages.items():
             if item == 'BEND TABLE HELP':

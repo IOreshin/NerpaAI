@@ -7,9 +7,8 @@ from .ConstantsRGSH import SHEET_FORMATS as formats
 from .DictionaryModule import DBManager
 
 import time
-import os
 
-from tkinter.messagebox import showerror, showinfo
+from tkinter.messagebox import showerror
 
 class TranslateCDW(KompasAPI):
     def __init__(self):
@@ -76,7 +75,7 @@ class TranslateCDW(KompasAPI):
                 end_time = time.time()
                 exuctution_time = round(end_time-start_time,2)
 
-                if messagebox.askokcancel('Завершение работы', 
+                if messagebox.askokcancel('Завершение работы',
                                           'Предварительный перевод чертежей выполнен за {} сек. Хотите открыть файлы?'.format(exuctution_time)):
                     for rus_path in self.rus_paths:
                         try:
@@ -134,9 +133,10 @@ class TranslateCDW(KompasAPI):
         iDoc2D1 = self.module.IKompasDocument2D1(iDoc2D)
         views = self.get_views_collection(iDoc)
         for view in views:
-            iBreakViewParam = self.module.IBreakViewParam(view)
-            if iBreakViewParam.BreaksCount == 0:
-                iDoc2D1.DestroyObjects(view)
+            if view.Name not in ['BEND TABLE TYP', 'BEND TABLE CS']:
+                iBreakViewParam = self.module.IBreakViewParam(view)
+                if iBreakViewParam.BreaksCount == 0:
+                    iDoc2D1.DestroyObjects(view)
 
         return iDoc
 
@@ -163,7 +163,7 @@ class TranslateCDW(KompasAPI):
             self.change_layout_sheets(doc_dispatch)
             progress_bar.Stop('', True)
         except Exception as e:
-            print(e)
+            print(e, view.Name, doc_dispatch.Name)
             progress_bar.Stop('', True)
 
     def change_fragment(self, view, doc_dispatch):
@@ -178,16 +178,13 @@ class TranslateCDW(KompasAPI):
         if InsertionObject:
             InsertionDefinition = InsertionObject.InsertionDefinition
             if view.Name in ['BEND TABLE TYP']:
-                pass
-                #InsertionDefinition.FileName = 'C:\\Users\\Ivan Oreshin\\Downloads\\Перев\\BEND_TABLE_TYP_RUS.frw'
+                InsertionDefinition.FileName = 'Z:\\14 РГШ\\YK RGS 2023\\02 Engineering\\08 MAN\\02 Engineering\\02 CAD folder\\WORKSHOP\\CONFIG KOMPAS\\SYMBOL\\BEND_TABLE_TYP_RUS.frw'
             if view.Name in ['BEND TABLE CS']:
                 if SDU_flag:
-                    pass
-                    #InsertionDefinition.FileName = 'C:\\Users\\Ivan Oreshin\\Downloads\\Перев\\BEND_TABLE_CS_SDU_RUS.frw'
+                    InsertionDefinition.FileName = 'Z:\\14 РГШ\\YK RGS 2023\\02 Engineering\\08 MAN\\02 Engineering\\02 CAD folder\\WORKSHOP\\CONFIG KOMPAS\\SYMBOL\\BEND_TABLE_CS_SDU_RUS.frw'
                 else:
-                    pass
-                    #InsertionDefinition.FileName = 'C:\\Users\\Ivan Oreshin\\Downloads\\Перев\\BEND_TABLE_CS_RUS.frw'
-            
+                    InsertionDefinition.FileName = 'Z:\\14 РГШ\\YK RGS 2023\\02 Engineering\\08 MAN\\02 Engineering\\02 CAD folder\\WORKSHOP\\CONFIG KOMPAS\\SYMBOL\\BEND_TABLE_CS_RUS.frw'
+
             view.Update()
 
     def destroy_object(self, doc_dispatch, object):
@@ -305,16 +302,19 @@ class TranslateCDW(KompasAPI):
                 iDrawingText_text = self.module.IText(iDrawingText)
 
                 if iDrawingText_text.Str and not iDrawingText_text.Str.startswith('^'):
-                    #ЭКСПЕРИМЕНТАЛЬНЫЙ БЛОК
                     view_name_flag = False
                     iTextLine = iDrawingText_text.TextLine(0)
                     for TextItem in iTextLine.TextItems:
-                        if TextItem.Str.strip() in ['ISO VIEW', 'VIEW', 'TOP VIEW', 
+                        if TextItem.Str.strip() in ['ISO VIEW', 'VIEW', 'TOP VIEW',
                                             'BOTTOM VIEW', 'ISO VIEW BOTTOM',
                                             'STB VIEW', 'FORE VIEW',
-                                            'PORT VIEW', 'AFT VIEW']:
+                                            'PORT VIEW', 'AFT VIEW',
+                                            'ISO VIEW 1', 'ISO VIEW 2',
+                                            'ISO VIEW 3', 'ISO VIEW 4',
+                                            'ISO VIEW 5', 'ISO VIEW 6',
+                                            'ISO VIEW 7', 'ISO VIEW 8']:
                             view_name_flag = True
-                    #НЕ ИСПОЛЬЗОВАТЬ ЕСЛИ БУДУТ ПРОБЛЕМЫ
+
                     if not view_name_flag:
                         edited_text = self.edit_mark_str(iDrawingText_text.Str)
                         iDrawingText_text.Str = edited_text
@@ -326,7 +326,34 @@ class TranslateCDW(KompasAPI):
                             iTextFont.Height = 7
                             TextItem.Update()
                             iDrawingText.Update()
- 
+                        if iDrawingText_text.Count > 1:
+                            for i in range(iDrawingText_text.Count-1):
+                                iTextLine = iDrawingText_text.TextLine(i+1)
+                                if iTextLine:
+                                    edited_text = self.edit_mark_str(iTextLine.Str)
+                                    iTextLine.Str = edited_text
+                                    iDrawingText.Update()
+
+                if iDrawingText_text.Str.startswith('^'):
+                    if iDrawingText_text.Count>1:
+                        for i in range(iDrawingText_text.Count-1):
+                            iTextLine = iDrawingText_text.TextLine(i+1)
+                            if iTextLine:
+                                edited_text = self.edit_mark_str(iTextLine.Str)
+                                iTextLine.Str = edited_text
+
+                        iDrawingText.Update()
+
+                        iTextLine = iDrawingText_text.TextLine(0)
+                        for TextItem in iTextLine.TextItems:
+                            print(TextItem.Str)
+                            iTextFont = self.module.ITextFont(TextItem)
+                            iTextFont.Height = 7
+                            TextItem.Update()
+
+                        iDrawingText.Update()
+
+
     def translate_stamp(self, doc_dispatch):
         iLayoutSheets = doc_dispatch.LayoutSheets
         for i in range(iLayoutSheets.Count):
@@ -336,9 +363,13 @@ class TranslateCDW(KompasAPI):
             while text_cell_counter < 1000:
                 text = iStamp.Text(text_cell_counter)
                 if text.Str:
-                    edited_text = self.edit_mark_str(text.Str)
-                    text.Str = edited_text
-                    iStamp.Update()
+                    if text_cell_counter == 220:
+                        text.Str = '13.09.2024'
+                        iStamp.Update()
+                    else:
+                        edited_text = self.edit_mark_str(text.Str)
+                        text.Str = edited_text
+                        iStamp.Update()
 
                 text_cell_counter += 1
 
@@ -389,21 +420,20 @@ class TranslateCDW(KompasAPI):
             TextLine.Numbering = 1
             if 'RGS 3.2.4.' in edited_text:
                 tube_bending_flag = True
-        
+            if tube_bending_flag:
+                if 'RGS 3.5.20' in edited_text:
+                    TextLine.Str = 'ДОПУСКАЕТСЯ ИЗГОТАВЛИВАТЬ ИЗ ЧАСТЕЙ. ' + edited_text
+
         if tube_bending_flag is True:
             TextLine = TechText.Add()
-            TextLine.Str = 'ЧТО-ТО ХОТЕЛИ ДОБАВИТЬ.'
-            TextLine.Numbering = 1
-
-            TextLine = TechText.Add()
-            TextLine.Str = 'ДОПОЛНИТЕЛЬНЫЕ ПОЯСНЕНИЯ:'
+            TextLine.Str = 'ИСПОЛЬЗУЕМЫЕ СОКРАЩЕНИЯ:'
             TextLine.Numbering = 1
 
             TextLine = TechText.Add()
             TextLine.Str = '    - ISO VIEW - ИЗОМЕТРИЧЕСКИЙ ВИД.'
             TextLine.Numbering = 0
             TextLine = TechText.Add()
-            TextLine.Str = '    - NPS - РАЗМЕР В ДЮЙМАХ.'
+            TextLine.Str = '    - NPS - НОМИНАЛЬНЫЙ РАЗМЕР ТРУБЫ.'
             TextLine.Numbering = 0
             TextLine = TechText.Add()
             TextLine.Str = '    - OD - НАРУЖНЫЙ ДИАМЕТР ТРУБЫ.'
@@ -414,6 +444,14 @@ class TranslateCDW(KompasAPI):
             TextLine = TechText.Add()
             TextLine.Str = '    - L - ДЛИНА ТРУБЫ.'
             TextLine.Numbering = 0
+        else:
+            TextLine = TechText.Add()
+            TextLine.Str = 'ИСПОЛЬЗУЕМЫЕ СОКРАЩЕНИЯ:'
+            TextLine.Numbering = 1
+            TextLine = TechText.Add()
+            TextLine.Str = '    - ISO VIEW - ИЗОМЕТРИЧЕСКИЙ ВИД.'
+            TextLine.Numbering = 0
+
 
         iLayoutSheets = doc_dispatch.LayoutSheets
         iLayoutSheet = iLayoutSheets.Item(0)

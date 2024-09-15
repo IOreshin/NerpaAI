@@ -25,54 +25,54 @@ class DictionaryWindow(Window):
         #создание основного окна
         self.dict_root = tk.Tk()
         self.dict_root.title(self.window_name+' : RGSH Dictionary Editor')
-        #self.dict_root.iconbitmap(self.pic_path)
+        self.dict_root.iconbitmap(self.pic_path)
         self.dict_root.resizable(False, False)
         self.dict_root.attributes("-topmost", True)
 
         self.main_frame = tk.Frame(self.dict_root)
         self.manage_frame = ttk.LabelFrame(self.dict_root,
-                                           borderwidth = 5, 
-                                           relief = 'solid', 
+                                           borderwidth = 5,
+                                           relief = 'solid',
                                            text = 'Управление')
-        self.manage_frame.grid(row = 0, column = 0, 
-                               pady = 5, padx = 5, 
+        self.manage_frame.grid(row = 0, column = 0,
+                               pady = 5, padx = 5,
                                sticky = 'nsew')
-        self.create_button(ttk, self.manage_frame, 
-                           'Добавить', self.add_word, 
+        self.create_button(ttk, self.manage_frame,
+                           'Добавить', self.add_word,
                            20, 'normal', 0, 0)
-        self.create_button(ttk, self.manage_frame, 
-                           'Удалить', self.delete_row, 
+        self.create_button(ttk, self.manage_frame,
+                           'Удалить', self.delete_row,
                            20, 'normal', 0, 1)
-        self.create_button(ttk, self.manage_frame, 
-                           'Помощь', self.help_page, 
+        self.create_button(ttk, self.manage_frame,
+                           'Помощь', self.help_page,
                            20, 'normal', 0, 2)
 
         self.find_frame = ttk.LabelFrame(self.dict_root,
                                          borderwidth=5,
-                                         relief = 'solid', 
+                                         relief = 'solid',
                                          text = 'Найти слово')
-        self.find_frame.grid(row = 1, column = 0, 
-                               pady = 5, padx = 5, 
+        self.find_frame.grid(row = 1, column = 0,
+                               pady = 5, padx = 5,
                                sticky = 'nsew')
         self.find_entry = ttk.Entry(self.find_frame, width= 40)
         self.find_entry.grid(row=0, column=0,
-                            pady = 5, padx = 5, 
+                            pady = 5, padx = 5,
                             sticky = 'nsew')
-        self.create_button(ttk, self.find_frame, 
-                           'Найти', self.find_word, 
+        self.create_button(ttk, self.find_frame,
+                           'Найти', self.find_word,
                            24, 'normal', 0, 1)
-        
+
 
         self.dict_frame = ttk.LabelFrame(self.dict_root,
                                          borderwidth=5,
-                                         relief = 'solid', 
+                                         relief = 'solid',
                                          text = 'Словарь')
-        self.dict_frame.grid(row = 2, column = 0, 
-                               pady = 5, padx = 5, 
+        self.dict_frame.grid(row = 2, column = 0,
+                               pady = 5, padx = 5,
                                sticky = 'nsew')
-        
+
         #создание дерева словаря
-        
+
 
         self.dict_tree_style = ttk.Style()
         self.dict_tree_style.configure("Treeview",
@@ -148,7 +148,7 @@ class DictionaryWindow(Window):
             self.dict_tree.insert("","end",
                             text="", values=(key, value))
             self.alternate_colors()
-            
+
     def find_word(self):
         value_to_find = self.find_entry.get()
         if value_to_find:
@@ -179,42 +179,42 @@ class AddWord(Window):
         #создание основного окна
         self.add_word_root = tk.Tk()
         self.add_word_root.title(self.window_name)
-        #self.add_word_root.iconbitmap(self.pic_path)
+        self.add_word_root.iconbitmap(self.pic_path)
         self.add_word_root.resizable(False, False)
         self.add_word_root.attributes("-topmost", True)
 
         #надпись Русский
-        self.rus_label = tk.Label(self.add_word_root, 
+        self.rus_label = tk.Label(self.add_word_root,
                                   text='Английский',)
         self.rus_label.grid(row=0, column=0,
-                            pady = 5, padx = 5, 
+                            pady = 5, padx = 5,
                             sticky = 'nsew')
-        
+
         #надпись Английский
         self.en_label = tk.Label(self.add_word_root,
                                  text='Русский')
         self.en_label.grid(row=0, column=1,
-                            pady = 5, padx = 5, 
+                            pady = 5, padx = 5,
                             sticky = 'nsew')
 
         #ввод русского значения
         self.rus_entry = ttk.Entry(self.add_word_root)
         self.rus_entry.grid(row=1, column=0,
-                            pady = 5, padx = 5, 
+                            pady = 5, padx = 5,
                             sticky = 'nsew')
-        
+
         #ввод английского значения
         self.en_entry = ttk.Entry(self.add_word_root)
         self.en_entry.grid(row=1, column=1,
-                            pady = 5, padx = 5, 
+                            pady = 5, padx = 5,
                             sticky = 'nsew')
-        
+
         #кнопка добавления пары слов
         self.add_button = ttk.Button(master=self.add_word_root,
-                                     text='Добавить', 
+                                     text='Добавить',
                                      command=self.add_word)
         self.add_button.grid(row=2, columnspan=2,
-                            pady = 5, padx = 5, 
+                            pady = 5, padx = 5,
                             sticky = 'nsew')
 
         #установка окна в центр и цикл
@@ -231,18 +231,18 @@ class AddWord(Window):
                 get_error_msg(
                     'Введите данные в поля для ввода')
                 return
-            
+
         add_word_state = self.db_mng.add_word(values_to_add)
         if add_word_state:
             get_info_msg(
                 'Пара слов успешно добавлена в базу')
             self.window_instance.dict_tree.insert("", "end",
-                             text='', values=(values_to_add[0], 
+                             text='', values=(values_to_add[0],
                                              values_to_add[1]))
             self.rus_entry.delete(0, tk.END)
             self.en_entry.delete(0, tk.END)
             return
-        
+
         get_error_msg(
             'Одно из слов уже находится в базе.\nПроверьте правильность заполнения')
 
@@ -270,7 +270,7 @@ class DBManager:
         dict_list = self.cursor.fetchall()
         keys, values = zip(*dict_list)
         return dict(zip(keys, values))
-            
+
     def get_column_info(self, column_name):
         self.cursor.execute("""SELECT {}
                             FROM {}""".format(column_name, self.table_name))
@@ -295,9 +295,9 @@ class DBManager:
         self.conn.commit()
 
         return True
-    
+
     def delete_row(self, value):
-        delete_query = """DELETE from {} 
+        delete_query = """DELETE from {}
                         where rus_word = ?""".format(self.table_name)
         self.cursor.execute(delete_query, (value, ))
         self.conn.commit()
@@ -312,11 +312,11 @@ class DictHelpWindow(Window):
         help_root.iconbitmap(self.pic_path)
         help_root.resizable(False, False)
         help_root.attributes("-topmost", True)
-        
+
         help_frame = ttk.LabelFrame(help_root, borderwidth = 5, relief = 'solid', text = 'Справка')
         help_frame.grid(row = 0, column = 0, pady = 5, padx = 5, sticky = 'nsew')
-        
-        HelpPages = read_json('resources/lib/HELPPAGES.json' )
+
+        HelpPages = read_json('/lib/HELPPAGES.json' )
         HelpText = ''
         for item, text in HelpPages.items():
             if item == 'DICTIONARY EDITOR HELP':

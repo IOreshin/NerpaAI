@@ -34,7 +34,7 @@ def read_json(path_to_file):
     Считывает JSON файл из переданного пути
     и возвращает полученную информацию
     '''
-    path = get_resource_path(path_to_file)
+    path = get_path()+path_to_file
     #path = os.path.dirname(os.path.abspath(__file__)) #получение пути к данному модулю
     #techdemands_path = path+path_to_file #получение пути к файлу-источнику ТТ
     with open(path,'r', encoding='utf-8') as Json_file:

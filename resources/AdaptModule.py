@@ -51,7 +51,7 @@ class AdaptParameters(KompasAPI):
         Функция составления Наименования для объектов
         '''
         if od not in self.state_arr: #DESC FOR TUBE
-            if od > 70:
+            if od > 30:
                 b_desc = 'PIPE NPS {} OD={} WT={} L={}'.format(nps,od,wt,round(1000*tube_l))
                 m_desc = 'PIPE'
             else:
@@ -89,21 +89,19 @@ class AdaptParameters(KompasAPI):
         else:
             return '-'
 
-    def get_b_spec(self, od, l_prof, cv, profile_name, pipe_mat):
+    def get_b_spec(self, od, l_prof, profile_name, mRGS, mST):
         '''
         Функция для определения bSPEC объекта
         '''
         if od not in self.state_arr: #TUBE
-            for item in mRGS_PIPING:
-                if ['{}'.format(pipe_mat), od] == item[:2]:
-                    return item[2]
+            return mRGS
         elif l_prof not in self.state_arr: #MK
             if profile_name == "RAIL DIN 3015":
                 return "DIN EN ISO 3506-1"
-            elif cv == 'CV1': #PLATE
-                return B_SPEC[1]
-            else:
+            elif mST == 'CV2': #PLATE
                 return B_SPEC[2]
+            else:
+                return B_SPEC[1]
 
     def get_mst(self, l_profile, l_tube):
         '''
@@ -118,6 +116,13 @@ class AdaptParameters(KompasAPI):
         else:
             return mST
     
+    def get_mRGS(self, m_tube, mOD, data_table):
+        for item in data_table:
+            if ['{}'.format(m_tube), mOD] == item[:2]:
+                return item[2]
+        
+        return '-'
+
     def get_bom_mto_params(self):
         '''
         Основная функция по преобразованию исходных свойств в
@@ -131,12 +136,9 @@ class AdaptParameters(KompasAPI):
             m_id = round(1000*(property_values['OD']-2*property_values['WT']),2) if property_values['OD'] not in self.state_arr else '-'
             m_nps = self.lookup_value(property_values['OD'], mNPS)
             m_sch = self.lookup_value(property_values['OD'], mSCH)
+            m_rgs = self.get_mRGS(property_values['PIPE_MAT'], property_values['OD'], mRGS_PIPING)
 
             m_st = self.get_mst(property_values['L_PROFILE'], property_values['L_TUBE'])
-            b_spec = self.get_b_spec(property_values['OD'], property_values['L_PROFILE'],m_st,
-                                    property_values['PROFILE_NAME'], property_values['PIPE_MAT'])
-            m_rgs = b_spec
-            
             m_t = property_values['T'] if property_values['T'] not in self.state_arr else '-'
             m_width = round(property_values['WIDTH']*1000,5) if property_values['WIDTH'] not in self.state_arr else '-'
 
@@ -145,7 +147,7 @@ class AdaptParameters(KompasAPI):
             elif property_values['L_PROFILE'] not in self.state_arr:
                 if property_values['T'] not in self.state_arr: #PLATE
                     m_unit, m_value, sort_value = ('m2', round((
-                        property_values['L_PROFILE']*property_values['WIDTH']),2), 
+                        property_values['L_PROFILE']*property_values['WIDTH']),3), 
                         (property_values['L_PROFILE']*property_values['WIDTH']))
                 else: #PROFILE
                     m_unit, m_value, sort_value = ('m', round(property_values['L_PROFILE'],1), 
@@ -159,6 +161,11 @@ class AdaptParameters(KompasAPI):
                                     property_values['PIPE_MAT'],property_values['PROFILE_NAME'])
             
             b_mat = m_mat
+
+            b_spec = self.get_b_spec(property_values['OD'],
+                                     property_values['L_PROFILE'],
+                                     property_values['PROFILE_NAME'],
+                                     m_rgs, m_st)
             
             mass = round(property_values['MASS'], 1)
             b_type = 'DETAIL' if property_values['bTYPE'] in self.state_arr else property_values['bTYPE']
@@ -177,8 +184,8 @@ class AdaptParameters(KompasAPI):
                         BOM_MTO_VALUES[key] = value_data[1]
         
             return BOM_MTO_VALUES
-        except Exception:
-            self.app.MessageBoxEx('Ошибка в свойствах тел. Проверьте правильность создания тел в документе',
+        except Exception as e:
+            self.app.MessageBoxEx('Ошибка в свойствах тела. Проверьте правильность создания тел в документе: {}'.format(e),
                                   'Ошибка')
             return
             
@@ -258,7 +265,7 @@ class AdaptAssy(KompasAPI):
             for i,body_dispatch in enumerate(bodies):
                 body_parameters = AdaptParameters(body_dispatch)
                 bom_mto_params = body_parameters.get_bom_mto_params()
-                if bom_mto_params['mVALUE'] != '-':
+                if bom_mto_params:
                     body_object = KompasItem(body_dispatch)
 
                     for id in BOM_MTO_IDs:

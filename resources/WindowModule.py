@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .NerpaUtility import get_resource_path
+from .NerpaUtility import get_path
 import tkinter as tk
 
 class Window:
@@ -8,8 +8,8 @@ class Window:
     Базовый класс для всех окон приложения NerpaAI
     '''
     def __init__(self):
-        self.window_name = 'NerpaAI v2.0'
-        self.pic_path = get_resource_path('resources/pic/2.ico')
+        self.window_name = 'NerpaAI'
+        self.pic_path = get_path()+'\\pic\\2_old.ico'
         
     def create_button(self, ttk, frame, text, command, width, state, row, column):
         '''
