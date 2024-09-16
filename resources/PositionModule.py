@@ -56,19 +56,19 @@ class SetPositions(KompasAPI):
             item_params.append(prop_value)
 
         try:
-            Index = POSITION_ID.index(item_params[0])
+            Index = bTYPE_NAMES.index(item_params[0])
             item_params[0] = Index
         except Exception:
             item_params[0] = len(bTYPE_NAMES)+1
 
         return tuple(item_params)
     
-    def set_item_pos(self, parts_list:list, dispatch): 
+    def set_item_pos(self, dispatch): 
         '''
         функция установки значения позиции объекту
         '''
         item_params = self.get_item_params(dispatch)
-        pos = parts_list.index(item_params)
+        pos = self.parts_list.index(item_params)
         item = KompasItem(dispatch)
         item.set_prp_value(15.0, (pos+1))
 
@@ -95,18 +95,19 @@ class SetPositions(KompasAPI):
                 if bodies.CreateSpcObjects:
                     body_params = self.get_item_params(body)
                     parts_list.append(body_params)
-        return parts_list
+        
+        self.parts_list = list(set(parts_list))
+        #сортировка производится в следующем порядке: bTYPE, PN, DESC
+        self.parts_list = sorted(list(set(parts_list)), key= lambda x:(x[0], x[1], x[2]))
+        return self.parts_list
 
     def sort_set_positions(self): 
         '''
         Функция сортировки-установки значения позиции
         '''
-        parts_list = list(set(self.get_parts_list()))
-        #сортировка производится в следующем порядке: bTYPE, PN, DESC
-        parts_list = sorted(parts_list, key= lambda x:(x[0], x[1], x[2]))
+        self.get_parts_list()
 
         progress_bar = self.get_progress_bar()
-        progress_bar.Start(0.0, len(parts_list), '', True)
 
         #установка позиций компонентам
         parts = self.iPart7.PartsEx(self.const.ksAllParts)
@@ -114,7 +115,7 @@ class SetPositions(KompasAPI):
             progress_bar.Start(0.0, len(parts),'',True)
             for i, part in enumerate(parts):
                 if part.IsLayoutGeometry is not False and part.CreateSpcObjects:
-                    self.set_item_pos(parts_list, part)
+                    self.set_item_pos(part)
                     progress_bar.SetProgress(i,'',True)
             progress_bar.Stop('', True)
 
@@ -125,15 +126,22 @@ class SetPositions(KompasAPI):
                 progress_bar.Start(0.0,len(bodies),'', True)
                 for i, body in enumerate(bodies):
                     if body.CreateSpcObjects:
-                        self.set_item_pos(parts_list, body)
+                        self.set_item_pos(body)
                         progress_bar.SetProgress(i,'',True)
                 progress_bar.Stop('', True)
             else:
                 if bodies.CreateSpcObjects:
-                    self.set_item_pos(parts_list, bodies)
+                    self.set_item_pos(bodies)
 
     def set_positions(self):
-        if self.remove_spec_desc():
-            self.sort_set_positions()
-            self.app.MessageBoxEx('Позиции установлены. Проверьте корректность выполнения операции'
-                                ,'Успех', 64)
+        try:
+            if self.remove_spec_desc():
+                self.sort_set_positions()
+                self.app.MessageBoxEx('Позиции установлены. Проверьте корректность выполнения операции'
+                                    ,'Успех', 64)
+                return
+        except Exception as e:
+            self.app.MessageBoxEx('Ошибка установки позиций: {}'.format(e)
+                                    ,'Успех', 64)
+            return
+

@@ -247,8 +247,8 @@ class AdaptAssy(KompasAPI):
                                     'Ошибка формата', 
                                     64)
                 return
-        except:
-            self.app.MessageBoxEx('Активный документ не является сборкой',
+        except Exception as e:
+            self.app.MessageBoxEx('Ошибка адаптации сборки:{}'.format(e),
                                   'Ошибка формата', 64)
             return
         

@@ -353,7 +353,6 @@ class TranslateCDW(KompasAPI):
 
                         iDrawingText.Update()
 
-
     def translate_stamp(self, doc_dispatch):
         iLayoutSheets = doc_dispatch.LayoutSheets
         for i in range(iLayoutSheets.Count):
@@ -492,28 +491,35 @@ class TranslateCDW(KompasAPI):
                     dim_item.Update()
 
     def edit_mark_str(self, str_to_edit: str):
-        #если целиком фраза обозначения есть в словаре
-        if str_to_edit.strip() in self.DICTIONARY.keys():
-            edited_text = self.DICTIONARY[str_to_edit.strip()]
+        text_to_edit = str_to_edit.strip()
+        #если целиком фраза есть в словаре
+        if text_to_edit in self.DICTIONARY.keys():
+            edited_text = self.DICTIONARY[text_to_edit]
             if str_to_edit.startswith(' '):
                 return ' '+edited_text
             if str_to_edit.endswith(' '):
                 return edited_text+' '
             return edited_text
 
+        #поиск частичного совпадения слов словаря и полученного значения
+        for key in self.DICTIONARY.keys():
+            if key in text_to_edit:
+                text_to_edit = text_to_edit.replace(key, self.DICTIONARY[key])
+                
         #если фраза состоит из строк
-        if '\n' in str_to_edit:
+        if '\n' in text_to_edit:
             edited_text = ''
-            for row in str_to_edit.split('\n'):
+            for row in text_to_edit.split('\n'):
                 edited_text += self.edit_single_str(row)
                 edited_text += '\n'
             return edited_text
 
-        return self.edit_symbol_str(str_to_edit)
+        return self.edit_symbol_str(text_to_edit)
 
     def edit_symbol_str(self, str_to_edit: str):
-        if str_to_edit.strip() in self.DICTIONARY.keys():
-            edited_text = self.DICTIONARY[str_to_edit.strip()]
+        text_to_edit = str_to_edit.strip()
+        if text_to_edit in self.DICTIONARY.keys():
+            edited_text = self.DICTIONARY[text_to_edit]
             if str_to_edit.startswith(' '):
                 return ' '+edited_text
             if str_to_edit.endswith(' '):
@@ -521,7 +527,12 @@ class TranslateCDW(KompasAPI):
 
             return edited_text
 
-        edited_text = self.edit_single_str(str_to_edit)
+        #поиск частичного совпадения слов словаря и полученного значения
+        for key in self.DICTIONARY.keys():
+            if key in text_to_edit:
+                text_to_edit = text_to_edit.replace(key, self.DICTIONARY[key])
+
+        edited_text = self.edit_single_str(text_to_edit)
 
         return edited_text
 
