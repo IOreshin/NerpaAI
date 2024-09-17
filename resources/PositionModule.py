@@ -114,7 +114,7 @@ class SetPositions(KompasAPI):
         if parts is not None:
             progress_bar.Start(0.0, len(parts),'',True)
             for i, part in enumerate(parts):
-                if part.IsLayoutGeometry is not False and part.CreateSpcObjects:
+                if part.IsLayoutGeometry is False and part.CreateSpcObjects:
                     self.set_item_pos(part)
                     progress_bar.SetProgress(i,'',True)
             progress_bar.Stop('', True)
