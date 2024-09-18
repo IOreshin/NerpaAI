@@ -134,9 +134,9 @@ class AdaptParameters(KompasAPI):
             m_od = self.get_prp_parameter(property_values['OD'], 1000, 2)
             m_wt = self.get_prp_parameter(property_values['WT'], 1000, 2)
             m_id = round(1000*(property_values['OD']-2*property_values['WT']),2) if property_values['OD'] not in self.state_arr else '-'
-            m_nps = self.lookup_value(property_values['OD'], mNPS)
-            m_sch = self.lookup_value(property_values['OD'], mSCH)
-            m_rgs = self.get_mRGS(property_values['PIPE_MAT'], property_values['OD'], mRGS_PIPING)
+            m_nps = self.lookup_value(m_od, mNPS)
+            m_sch = self.lookup_value(m_od, mSCH)
+            m_rgs = self.get_mRGS(property_values['PIPE_MAT'], m_od, mRGS_PIPING)
 
             m_st = self.get_mst(property_values['L_PROFILE'], property_values['L_TUBE'])
             m_t = property_values['T'] if property_values['T'] not in self.state_arr else '-'
@@ -157,12 +157,12 @@ class AdaptParameters(KompasAPI):
                                                         property_values['L_TUBE'], property_values['L_PROFILE'],
                                                         m_t, property_values['PROFILE_NAME'])
             
-            m_mat = self.get_material(property_values['OD'], property_values['L_PROFILE'],
+            m_mat = self.get_material(m_od, property_values['L_PROFILE'],
                                     property_values['PIPE_MAT'],property_values['PROFILE_NAME'])
             
             b_mat = m_mat
 
-            b_spec = self.get_b_spec(property_values['OD'],
+            b_spec = self.get_b_spec(m_od,
                                      property_values['L_PROFILE'],
                                      property_values['PROFILE_NAME'],
                                      m_rgs, m_st)
