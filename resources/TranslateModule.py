@@ -13,7 +13,6 @@ from tkinter.messagebox import showerror
 class TranslateCDW(KompasAPI):
     def __init__(self):
         super().__init__()
-        self.temp_dir = 'C:\\NerpaTranslateTemp'
 
         self.rus_paths = []
         self.iDocuments = self.app.Documents
@@ -39,7 +38,7 @@ class TranslateCDW(KompasAPI):
         '''
         Получить словарь РГШ
         '''
-        db_mng = DBManager()
+        db_mng = DBManager('\\lib\\DICTIONARY.db')
         dictionary = db_mng.get_dictionary()
         db_mng.conn.close()
         return dictionary

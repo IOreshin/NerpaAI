@@ -87,6 +87,8 @@ class MainWindow(Window):
              'command': BTWindow, 'state': 'normal'},
             {'text': 'Перевести .CDW чертежи ENG-RUS', 'frame': 'drawing',
               'command': TranslateCDW, 'state': 'normal'},
+            {'text': 'Заполнить штамп', 'frame': 'drawing',
+              'command': StampWindow, 'state': 'normal'},
             {'text': 'Редактор словаря', 'frame': 'extra', 
              'command': DictionaryWindow, 'state': 'normal'},
             {'text': 'Создать PDF', 'frame': 'extra', 

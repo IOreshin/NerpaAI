@@ -72,8 +72,6 @@ class DictionaryWindow(Window):
                                sticky = 'nsew')
 
         #создание дерева словаря
-
-
         self.dict_tree_style = ttk.Style()
         self.dict_tree_style.configure("Treeview",
                 background="white",
@@ -99,7 +97,6 @@ class DictionaryWindow(Window):
         self.add_data_tree()
         self.alternate_colors()
         self.dict_tree.bind('<Button-1>', self.alternate_colors_click)
-
 
         self.dict_root.update_idletasks()
         w,h = self.get_center_window(self.dict_root)
@@ -247,9 +244,10 @@ class AddWord(Window):
             'Одно из слов уже находится в базе.\nПроверьте правильность заполнения')
 
 class DBManager:
-    def __init__(self):
+    def __init__(self, db_path):
+        self.db_path = db_path
         self.folder_path = get_path()
-        self.db_path = self.folder_path+"\\lib\\DICTIONARY.db"
+        self.db_path = self.folder_path+self.db_path
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
         self.table_name = 'dictionary'

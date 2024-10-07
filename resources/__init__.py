@@ -10,3 +10,4 @@ from .TranslateModule import TranslateCDW
 from .WindowModule import Window
 from .PropertyMngModule import PropertyManager
 from .NerpaUtility import get_path
+from .StampModule import StampWindow
