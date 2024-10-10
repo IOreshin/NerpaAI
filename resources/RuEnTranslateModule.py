@@ -32,12 +32,14 @@ class RuEnTranslateCDW(KompasAPI):
         self.marking_interface = ('DrawingText',
                                   )
         
+        self.translate_cdw_docs()
+        
     def get_dictionary(self):
         '''
         Получить словарь 
         '''
         db_mng = DBManager('\\lib\\DICTIONARY_MSK.db')
-        dictionary = db_mng.get_dictionary()
+        dictionary = db_mng.get_dictionary(language='en')
         db_mng.conn.close()
         return dictionary
     
@@ -121,11 +123,11 @@ class RuEnTranslateCDW(KompasAPI):
 
         return views_dispatchs
 
-    def open_doc_and_destroy_views(self, rus_path):
+    def open_doc_and_destroy_views(self, cdw_path):
         '''
         Функция разрушения всех видов на чертеже
         '''
-        iDoc = self.iDocuments.Open(rus_path, False, False)
+        iDoc = self.iDocuments.Open(cdw_path, False, False)
         iDoc2D = self.module.IKompasDocument2D(iDoc)
         iDoc2D1 = self.module.IKompasDocument2D1(iDoc2D)
         views = self.get_views_collection(iDoc)
@@ -150,9 +152,6 @@ class RuEnTranslateCDW(KompasAPI):
                 self.drawing_container_operations(view)
                 self.translate_drawing_tables(view)
 
-            self.translate_stamp(doc_dispatch)
-            self.translate_tech_demands(doc_dispatch)
-            self.change_layout_sheets(doc_dispatch)
             progress_bar.Stop('', True)
         
         except Exception as e:
@@ -287,7 +286,7 @@ class RuEnTranslateCDW(KompasAPI):
             for i in range(DrwTables.Count):
                 DrawingTable = DrwTables.DrawingTable(i)
                 table = self.module.ITable(DrawingTable)
-                if table.RowsCount != 1:
+                if table.RowsCount != 0:
                     self.translate_any_table(table, True)
 
     def translate_any_table(self, table, hyper_text_state:bool):
@@ -353,24 +352,31 @@ class RuEnTranslateCDW(KompasAPI):
             else:
                 continue
 
-    def translate_stamp(self, doc_dispatch):
-        iLayoutSheets = doc_dispatch.LayoutSheets
-        for i in range(iLayoutSheets.Count):
-            iLayoutSheet = iLayoutSheets.Item(i)
-            iStamp = iLayoutSheet.Stamp
-            text_cell_counter = 0
-            while text_cell_counter < 1000:
-                text = iStamp.Text(text_cell_counter)
-                if text.Str:
-                    if text_cell_counter == 220:
-                        text.Str = '13.09.2024'
-                        iStamp.Update()
-                    else:
-                        edited_text = self.edit_mark_str(text.Str)
-                        text.Str = edited_text
-                        iStamp.Update()
+    def edit_mark_str(self, str_to_edit: str):
+        text_to_edit = str_to_edit.strip()
+        #если целиком фраза есть в словаре
+        if text_to_edit in self.DICTIONARY.keys():
+            edited_text = self.DICTIONARY[text_to_edit]
+            if str_to_edit.startswith(' '):
+                return ' '+edited_text
+            if str_to_edit.endswith(' '):
+                return edited_text+' '
+            return edited_text
 
-                text_cell_counter += 1
+        #поиск частичного совпадения слов словаря и полученного значения
+        for key in self.DICTIONARY.keys():
+            if key in text_to_edit:
+                text_to_edit = text_to_edit.replace(key, self.DICTIONARY[key])
+                
+        #если фраза состоит из строк
+        if '\n' in text_to_edit:
+            edited_text = ''
+            for row in text_to_edit.split('\n'):
+                edited_text += self.edit_single_str(row)
+                edited_text += '\n'
+            return edited_text
+
+        return self.edit_symbol_str(text_to_edit)
 
     def edit_symbol_str(self, str_to_edit: str):
         text_to_edit = str_to_edit.strip()
@@ -389,5 +395,19 @@ class RuEnTranslateCDW(KompasAPI):
                 text_to_edit = text_to_edit.replace(key, self.DICTIONARY[key])
 
         edited_text = self.edit_single_str(text_to_edit)
+
+        return edited_text
+    
+    def edit_single_str(self, str_to_edit:str):
+        split_text = str_to_edit.split(' ')
+        edited_text = ''
+        for split_item in split_text:
+            if split_item in self.DICTIONARY.keys():
+                edited_text += self.DICTIONARY[split_item]
+            else:
+                edited_text += split_item
+
+            if split_text.index(split_item) != len(split_text)-1:
+                edited_text += ' '
 
         return edited_text

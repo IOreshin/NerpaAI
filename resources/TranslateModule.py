@@ -31,14 +31,15 @@ class TranslateCDW(KompasAPI):
                                    )
         self.marking_interface = ('DrawingText',
                                   )
-
+        
         self.translate_cdw_docs()
+
 
     def get_dictionary(self):
         '''
         Получить словарь РГШ
         '''
-        db_mng = DBManager('\\lib\\DICTIONARY.db')
+        db_mng = DBManager('\lib\DICTIONARY.db')
         dictionary = db_mng.get_dictionary()
         db_mng.conn.close()
         return dictionary

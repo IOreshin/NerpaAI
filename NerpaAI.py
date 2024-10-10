@@ -4,14 +4,12 @@ from resources import *
 
 import tkinter as tk
 from tkinter import ttk
-import webbrowser
-import sys
 
+import sys
 
 class MainWindow(Window):
     def __init__(self):
         super().__init__()
-        self.app = NerpaUtility.KompasAPI().app
         self.root = tk.Tk()
         self.root.title(self.window_name)
         self.root.resizable(False, False)
@@ -93,8 +91,6 @@ class MainWindow(Window):
              'command': DictionaryWindow, 'state': 'normal'},
             {'text': 'Создать PDF', 'frame': 'extra', 
              'command': self.get_pdf_window, 'state': 'normal'},
-            {'text': 'Справка', 'frame': 'extra', 
-             'command': self.get_help_page, 'state': 'normal'},
         ]
 
         buttons = []
@@ -121,9 +117,6 @@ class MainWindow(Window):
         self.root.geometry('+{}+{}'.format(w, h))
         self.root.mainloop()
 
-    def get_help_page(self):
-        page_path = get_path()+'ReadMe.htm'
-        webbrowser.open(page_path)
 
 if __name__ == '__main__':
     app = MainWindow()
