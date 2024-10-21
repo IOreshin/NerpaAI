@@ -19,8 +19,8 @@ class StampWindow(Window):
         users = (('oreshin_ie', 'IVAN O.'),
                 ('bezginov_vo', 'VLADIMIR B.'),
                 ('meshkov_ak', 'ALEX M.'),
-                ('grigorieva_ok', 'OLGA G.'))
-        
+                ('grigoreva_oy', 'OLGA G.'))
+
         for user in users:
             if username in user[0]:
                 return user[1]
@@ -42,7 +42,7 @@ class StampWindow(Window):
         self.stamp_frame.grid(row = 0, column = 0,
                                pady = 5, padx = 5,
                                sticky = 'nsew')
-        
+
         entry_names = (('REV', 0, 0),
                         ('DATE', 0, 1),
                         ('DESCRIPTION', 0, 2),
@@ -53,7 +53,7 @@ class StampWindow(Window):
                         ('MATERIAL', 2, 2),
                         ('REV', 2, 3),
                         ('NOC', 2, 4))
-        
+
         entry_params = (('REV', 1, 0, '00', 5),
                             ('DATE', 1, 1, datetime.date.today().strftime("%d.%m.%Y"), 10),
                             ('DESCRIPTION', 1, 2, 'ISSUED FOR REVIEW', 20),
@@ -65,7 +65,7 @@ class StampWindow(Window):
                             ('REV', 3, 3, '00', 5),
                             ('NOC', 3, 4, '0', 5))
 
-        self.entries = [ttk.Entry(self.stamp_frame, width=entry_param[4]) 
+        self.entries = [ttk.Entry(self.stamp_frame, width=entry_param[4])
                    for entry_param in entry_params]
         entry_labels = [tk.Label(self.stamp_frame, text=entry_name[0])
                        for entry_name in entry_names]
@@ -76,7 +76,7 @@ class StampWindow(Window):
                             pady = 2, padx = 2,
                             sticky = 'nsew')
 
-        for i, entry in enumerate(self.entries):          
+        for i, entry in enumerate(self.entries):
             entry.grid(row = entry_params[i][1],
                         column = entry_params[i][2],
                         pady = 5, padx = 5,
@@ -90,7 +90,7 @@ class StampWindow(Window):
         self.manage_frame.grid(row = 1, column = 0,
                                pady = 5, padx = 5,
                                sticky = 'nsew')
-        
+
         self.create_button(ttk, self.manage_frame,
                     'В активном документе', self.change_active_doc,
                     22, 'normal', 0, 0)
@@ -159,12 +159,13 @@ class ChangeStampName(KompasAPI):
     def change_all_docs_stamp(self):
         for i in range(self.iDocuments.Count):
             doc = self.iDocuments.Item(i)
-            if doc.DocumentType == 1:
+            if doc and doc.DocumentType == 1:
                 self.change_stamp(doc)
 
     def change_active_doc_stamp(self):
         doc = self.app.ActiveDocument
-        self.change_stamp(doc)
+        if doc and doc.DocumentType == 1:
+            self.change_stamp(doc)
 
 class StampHelpWindow(Window):
     def __init__(self):

@@ -13,6 +13,7 @@ from tkinter.messagebox import showerror
 class TranslateCDW(KompasAPI):
     def __init__(self):
         super().__init__()
+        self.temp_dir = 'C:\\NerpaTranslateTemp'
 
         self.rus_paths = []
         self.iDocuments = self.app.Documents
@@ -31,15 +32,14 @@ class TranslateCDW(KompasAPI):
                                    )
         self.marking_interface = ('DrawingText',
                                   )
-        
-        self.translate_cdw_docs()
 
+        self.translate_cdw_docs()
 
     def get_dictionary(self):
         '''
         Получить словарь РГШ
         '''
-        db_mng = DBManager('\lib\DICTIONARY.db')
+        db_mng = DBManager()
         dictionary = db_mng.get_dictionary()
         db_mng.conn.close()
         return dictionary
@@ -304,16 +304,17 @@ class TranslateCDW(KompasAPI):
                 if iDrawingText_text.Str and not iDrawingText_text.Str.startswith('^'):
                     view_name_flag = False
                     iTextLine = iDrawingText_text.TextLine(0)
-                    for TextItem in iTextLine.TextItems:
-                        if TextItem.Str.strip() in ['ISO VIEW', 'VIEW', 'TOP VIEW',
-                                            'BOTTOM VIEW', 'ISO VIEW BOTTOM',
-                                            'STB VIEW', 'FORE VIEW',
-                                            'PORT VIEW', 'AFT VIEW',
-                                            'ISO VIEW 1', 'ISO VIEW 2',
-                                            'ISO VIEW 3', 'ISO VIEW 4',
-                                            'ISO VIEW 5', 'ISO VIEW 6',
-                                            'ISO VIEW 7', 'ISO VIEW 8']:
-                            view_name_flag = True
+                    if iTextLine.TextItems:
+                        for TextItem in iTextLine.TextItems:
+                            if TextItem.Str.strip() in ['ISO VIEW', 'VIEW', 'TOP VIEW',
+                                                'BOTTOM VIEW', 'ISO VIEW BOTTOM',
+                                                'STB VIEW', 'FORE VIEW',
+                                                'PORT VIEW', 'AFT VIEW',
+                                                'ISO VIEW 1', 'ISO VIEW 2',
+                                                'ISO VIEW 3', 'ISO VIEW 4',
+                                                'ISO VIEW 5', 'ISO VIEW 6',
+                                                'ISO VIEW 7', 'ISO VIEW 8']:
+                                view_name_flag = True
 
                     if not view_name_flag:
                         edited_text = self.edit_mark_str(iDrawingText_text.Str)
@@ -342,11 +343,10 @@ class TranslateCDW(KompasAPI):
                                 edited_text = self.edit_mark_str(iTextLine.Str)
                                 iTextLine.Str = edited_text
 
-                        iDrawingText.Update()
+                        #iDrawingText.Update()
 
                         iTextLine = iDrawingText_text.TextLine(0)
                         for TextItem in iTextLine.TextItems:
-                            print(TextItem.Str)
                             iTextFont = self.module.ITextFont(TextItem)
                             iTextFont.Height = 7
                             TextItem.Update()
@@ -363,7 +363,7 @@ class TranslateCDW(KompasAPI):
                 text = iStamp.Text(text_cell_counter)
                 if text.Str:
                     if text_cell_counter == 220:
-                        text.Str = '13.09.2024'
+                        text.Str = '30.09.2024'
                         iStamp.Update()
                     else:
                         edited_text = self.edit_mark_str(text.Str)
@@ -505,7 +505,7 @@ class TranslateCDW(KompasAPI):
         for key in self.DICTIONARY.keys():
             if key in text_to_edit:
                 text_to_edit = text_to_edit.replace(key, self.DICTIONARY[key])
-                
+
         #если фраза состоит из строк
         if '\n' in text_to_edit:
             edited_text = ''
@@ -529,7 +529,7 @@ class TranslateCDW(KompasAPI):
 
         #поиск частичного совпадения слов словаря и полученного значения
         for key in self.DICTIONARY.keys():
-            if key in text_to_edit:
+            if key in text_to_edit and 'RGS' not in text_to_edit:
                 text_to_edit = text_to_edit.replace(key, self.DICTIONARY[key])
 
         edited_text = self.edit_single_str(text_to_edit)

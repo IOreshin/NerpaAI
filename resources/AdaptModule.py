@@ -11,7 +11,7 @@ class AdaptParameters(KompasAPI):
     '''
     def __init__(self, dispatch):
         super().__init__()
-        self.dispatch = dispatch 
+        self.dispatch = dispatch
         self.state_arr = (None, '', '-')
 
     def get_property_values(self):
@@ -21,7 +21,7 @@ class AdaptParameters(KompasAPI):
         '''
         #создание словаря свойств
         property_values = dict()
-        #создание объекта класса KompasItem для использования функции get_prp_value 
+        #создание объекта класса KompasItem для использования функции get_prp_value
         body = KompasItem(self.dispatch)
         #цикл прохода по списку исходных свойств
         for prop_ID in SOURCE_PROPERTIES_ID:
@@ -34,7 +34,7 @@ class AdaptParameters(KompasAPI):
         Вспомогательная функция поиска соотвествия в list данных
         '''
         for item in lookup_table:
-            if value == item[0]:
+            if item[0] in [value]:
                 return item[1]
         return '-'
 
@@ -115,12 +115,12 @@ class AdaptParameters(KompasAPI):
             return '-'
         else:
             return mST
-    
+
     def get_mRGS(self, m_tube, mOD, data_table):
         for item in data_table:
             if ['{}'.format(m_tube), mOD] == item[:2]:
                 return item[2]
-        
+
         return '-'
 
     def get_bom_mto_params(self):
@@ -147,48 +147,48 @@ class AdaptParameters(KompasAPI):
             elif property_values['L_PROFILE'] not in self.state_arr:
                 if property_values['T'] not in self.state_arr: #PLATE
                     m_unit, m_value, sort_value = ('m2', round((
-                        property_values['L_PROFILE']*property_values['WIDTH']),3), 
+                        property_values['L_PROFILE']*property_values['WIDTH']),3),
                         (property_values['L_PROFILE']*property_values['WIDTH']))
                 else: #PROFILE
-                    m_unit, m_value, sort_value = ('m', round(property_values['L_PROFILE'],1), 
+                    m_unit, m_value, sort_value = ('m', round(property_values['L_PROFILE'],2),
                                                 property_values['L_PROFILE'])
 
-            b_desc, m_desc, m_dim = self.get_description(m_nps, m_od, m_wt, 
+            b_desc, m_desc, m_dim = self.get_description(m_nps, m_od, m_wt,
                                                         property_values['L_TUBE'], property_values['L_PROFILE'],
                                                         m_t, property_values['PROFILE_NAME'])
-            
-            m_mat = self.get_material(m_od, property_values['L_PROFILE'],
+
+            m_mat = self.get_material(property_values['OD'], property_values['L_PROFILE'],
                                     property_values['PIPE_MAT'],property_values['PROFILE_NAME'])
-            
+
             b_mat = m_mat
 
-            b_spec = self.get_b_spec(m_od,
+            b_spec = self.get_b_spec(property_values['OD'],
                                      property_values['L_PROFILE'],
                                      property_values['PROFILE_NAME'],
                                      m_rgs, m_st)
-            
+
             mass = round(property_values['MASS'], 1)
             b_type = 'DETAIL' if property_values['bTYPE'] in self.state_arr else property_values['bTYPE']
 
-            BOM_MTO_VALUES_NAMES = (('mNPS', m_nps), ('mDESC', m_desc),('bDESC', b_desc), ('mDIM', m_dim), 
+            BOM_MTO_VALUES_NAMES = (('mNPS', m_nps), ('mDESC', m_desc),('bDESC', b_desc), ('mDIM', m_dim),
                                     ('mMAT', m_mat), ('bMAT', b_mat), ('mOD', m_od),('mID', m_id),
                                     ('mWT', m_wt), ('mSCH', m_sch), ('mRGS', m_rgs), ('mUNIT', m_unit),
                                     ('mVALUE', m_value), ('bSPEC', b_spec), ('mST', m_st),
                                     ('mT', str(m_t)), ('mWIDTH', str(m_width)), ('SORT_VALUE', sort_value),
                                     ('MASS', mass), ('bTYPE', b_type),)
-            
+
             BOM_MTO_VALUES = {name[0]:None for name in BOM_MTO_VALUES_NAMES}
             for key in BOM_MTO_VALUES:
                 for value_data in BOM_MTO_VALUES_NAMES:
                     if key == value_data[0]:
                         BOM_MTO_VALUES[key] = value_data[1]
-        
+
             return BOM_MTO_VALUES
         except Exception as e:
             self.app.MessageBoxEx('Ошибка в свойствах тела. Проверьте правильность создания тел в документе: {}'.format(e),
                                   'Ошибка')
             return
-            
+
 class AdaptAssy(KompasAPI):
     '''
     Класс для обработки сборки
@@ -196,6 +196,7 @@ class AdaptAssy(KompasAPI):
     def __init__(self):
         super().__init__()
         self.iPart7 = self.get_part_dispatch()
+        self.TopMarking = self.iPart7.Marking
         self.adapt_current_assy()
 
     def get_start_index(self):
@@ -214,7 +215,7 @@ class AdaptAssy(KompasAPI):
                 if part_marking == top_marking:
                     i += 1
         return i
-    
+
     def get_marking_info(self):
         '''
         Функция получения list с свойствами уникальных тел,
@@ -232,7 +233,7 @@ class AdaptAssy(KompasAPI):
             marking_arr = sorted(bodies_parameters, key = lambda point:
                                  (point['mOD'], point['mT'], point['mDESC'], point['SORT_VALUE'],
                                   point['mWIDTH'], point['MASS']))
-            
+
             return marking_arr
 
     def adapt_current_assy(self):
@@ -244,14 +245,14 @@ class AdaptAssy(KompasAPI):
             doc = self.app.ActiveDocument
             if doc.DocumentType != 5:
                 self.app.MessageBoxEx('Активный документ не является сборкой',
-                                    'Ошибка формата', 
+                                    'Ошибка формата',
                                     64)
                 return
-        except Exception as e:
-            self.app.MessageBoxEx('Ошибка адаптации сборки:{}'.format(e),
+        except:
+            self.app.MessageBoxEx('Активный документ не является сборкой',
                                   'Ошибка формата', 64)
             return
-        
+
         #проверка и добавление свойств RGSH
         property_manager = PropertyManager()
         property_manager.check_add_properties()
@@ -259,10 +260,18 @@ class AdaptAssy(KompasAPI):
         MARKING_INFO = self.get_marking_info() #лист с инфо для маркировки
         START_INDEX = self.get_start_index() #стартовый индекс для маркировки
         if MARKING_INFO:
+            doc1 = self.module.IKompasDocument1(doc)
             progress_bar = self.get_progress_bar()
             progress_bar.Start(0.0, len(MARKING_INFO),'', True)
             bodies = self.get_bodies_array()
+
+            app_visible = True
+            if len(bodies) > 30:
+                self.app.Visible = False
+                app_visible = False
+
             for i,body_dispatch in enumerate(bodies):
+                doc1.ReportPropertiesMultieditMode(True, False)
                 body_parameters = AdaptParameters(body_dispatch)
                 bom_mto_params = body_parameters.get_bom_mto_params()
                 if bom_mto_params:
@@ -275,19 +284,33 @@ class AdaptAssy(KompasAPI):
                     drw_format = body_object.get_prp_value(1.0)
                     if drw_format in ['БЧ', '', None, '-']:
                         body_object.set_prp_value(1.0, 'N/D')
-                    
+
                     if bom_mto_params['mMAT'] != '-':
                         body_object.set_prp_value(9.0, bom_mto_params['mMAT'])
-                    
+
                     marking_index = MARKING_INFO.index(bom_mto_params)+START_INDEX
-                    marking_body = str(self.iPart7.Marking)+'-'+'{:03}'.format(marking_index)
+                    marking_body = str(self.TopMarking)+'-'+'{:03}'.format(marking_index)
                     body_object.set_prp_value(4.0, marking_body)
 
+                doc1.ReportPropertiesMultieditMode(False, True)
                 progress_bar.SetProgress(i,'', True)
+
+            iPart7 = self.get_part_dispatch()
+            part_object = KompasItem(iPart7)
+            part_object.set_prp_value(9.0,'N/A')
+            part_object.set_prp_value(250981089159.0,'N/A')
+            part_object.set_prp_value(260572918959.0,'N/A')
+            part_object.set_prp_value(307499772460.0,'ASSY')
+            iPart7.Update()
             progress_bar.Stop('', True)
+
+            if app_visible is False:
+                self.app.Visible = True
+                app_visible = True
+
             self.app.MessageBoxEx('Объекты адаптированы. Проверьте корректность выполнения операции.',
                                   'Успех!', 64)
-            
+
 class AdaltDetail(KompasAPI):
     '''
     Класс для обработки детали
@@ -301,17 +324,13 @@ class AdaltDetail(KompasAPI):
         Метод для обработки детали
         '''
         #проверка формата документа
-        try:
-            doc = self.app.ActiveDocument
-            if doc.DocumentType != 4:
-                self.app.MessageBoxEx('Активный документ не является деталью',
-                                    'Ошибка формата', 64)
-                return
-        except Exception:
+        doc = self.app.ActiveDocument
+
+        if doc.DocumentType != 4:
             self.app.MessageBoxEx('Активный документ не является деталью',
-                                  'Ошибка формата', 64)
+                                'Ошибка формата', 64)
             return
-        
+
         iPart7 = self.get_part_dispatch()
         bodies = self.module.IFeature7(iPart7).ResultBodies
         if bodies is not None:
@@ -329,12 +348,12 @@ class AdaltDetail(KompasAPI):
             self.app.MessageBoxEx('В детали нет тел',
                                   'Ошибка', 64)
             return
-        
+
         if len(true_bodies) != 1:
-            self.app.MessageBoxEx('Ошибка', 
+            self.app.MessageBoxEx('Деталь содержит 2 или более тел',
                      'Деталь содержит 2 или более тел', 64)
             return
-        
+
         #проверка и добавление свойств RGSH в деталь
         property_manager = PropertyManager()
         property_manager.check_add_properties()
@@ -343,9 +362,13 @@ class AdaltDetail(KompasAPI):
         bom_mto_params = adapt_body.get_bom_mto_params()
         iPart7 = self.get_part_dispatch()
         detail_object = KompasItem(iPart7)
+        detail_object.set_prp_value(9.0, 'S355')
+        iPart7.Update()
         for id in BOM_MTO_IDs:
             if id[1] == 'bDESC':
                 continue
             if bom_mto_params[id[1]]:
                 detail_object.set_prp_value(id[0], bom_mto_params[id[1]])
             iPart7.Update()
+        self.app.MessageBoxEx('Деталь адаптирована. Проверьте корректность выполнения операции',
+                     '', 64)

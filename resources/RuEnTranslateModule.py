@@ -131,10 +131,10 @@ class RuEnTranslateCDW(KompasAPI):
         iDoc2D = self.module.IKompasDocument2D(iDoc)
         iDoc2D1 = self.module.IKompasDocument2D1(iDoc2D)
         views = self.get_views_collection(iDoc)
-        for view in views:
-            iBreakViewParam = self.module.IBreakViewParam(view)
-            if iBreakViewParam.BreaksCount == 0:
-                iDoc2D1.DestroyObjects(view)
+        #for view in views:
+           # iBreakViewParam = self.module.IBreakViewParam(view)
+           # if iBreakViewParam.BreaksCount == 0:
+           #     iDoc2D1.DestroyObjects(view)
 
         return iDoc
 
@@ -193,11 +193,6 @@ class RuEnTranslateCDW(KompasAPI):
             TextLine.Str = edited_text
             TextLine.Numbering = 1
 
-        iLayoutSheets = doc_dispatch.LayoutSheets
-        iLayoutSheet = iLayoutSheets.Item(0)
-        iSheetFormat = iLayoutSheet.Format
-        Format = iSheetFormat.Format
-        TechDemands.BlocksGabarits = ((formats[Format][1]-140), 65, formats[Format][1]-5, formats[Format][2])
         TechDemands.Update()
 
     def drawing_container_operations(self, view):
@@ -207,56 +202,46 @@ class RuEnTranslateCDW(KompasAPI):
             for i in range(iDrawingTexts.Count):
                 iDrawingText = iDrawingTexts.DrawingText(i)
                 iDrawingText_text = self.module.IText(iDrawingText)
-
-                if iDrawingText_text.Str and not iDrawingText_text.Str.startswith('^'):
-                    view_name_flag = False
-                    iTextLine = iDrawingText_text.TextLine(0)
-                    for TextItem in iTextLine.TextItems:
-                        if TextItem.Str.strip() in ['ISO VIEW', 'VIEW', 'TOP VIEW',
-                                            'BOTTOM VIEW', 'ISO VIEW BOTTOM',
-                                            'STB VIEW', 'FORE VIEW',
-                                            'PORT VIEW', 'AFT VIEW',
-                                            'ISO VIEW 1', 'ISO VIEW 2',
-                                            'ISO VIEW 3', 'ISO VIEW 4',
-                                            'ISO VIEW 5', 'ISO VIEW 6',
-                                            'ISO VIEW 7', 'ISO VIEW 8']:
-                            view_name_flag = True
-
-                    if not view_name_flag:
-                        edited_text = self.edit_mark_str(iDrawingText_text.Str)
-                        iDrawingText_text.Str = edited_text
-                        iDrawingText.Update()
-                    if view_name_flag:
-                        iTextLine = iDrawingText_text.TextLine(0)
-                        for TextItem in iTextLine.TextItems:
-                            iTextFont = self.module.ITextFont(TextItem)
-                            iTextFont.Height = 7
-                            TextItem.Update()
-                            iDrawingText.Update()
+                if iDrawingText_text.Str:
+                    if iDrawingText_text.Str.startswith('^'): #ссылочный элемент (название вида)
                         if iDrawingText_text.Count > 1:
                             for i in range(iDrawingText_text.Count-1):
                                 iTextLine = iDrawingText_text.TextLine(i+1)
                                 if iTextLine:
                                     edited_text = self.edit_mark_str(iTextLine.Str)
                                     iTextLine.Str = edited_text
-                                    iDrawingText.Update()
+                            
+                            iDrawingText.Update()
+                            
+                            iTextLine = iDrawingText_text.TextLine(0)
+                            for TextItem in iTextLine.TextItems:
+                                iTextFont = self.module.ITextFont(TextItem)
+                                iTextFont.Height = 10
+                                iTextFont.Italic = False
+                                TextItem.Update()
+                                    
+                            iDrawingText.Update()
+                            
 
-                if iDrawingText_text.Str.startswith('^'):
-                    if iDrawingText_text.Count>1:
-                        for i in range(iDrawingText_text.Count-1):
-                            iTextLine = iDrawingText_text.TextLine(i+1)
+                        else:
+                            iTextLine = iDrawingText_text.TextLine(0)
+                            edited_text = self.edit_mark_str(iTextLine.Str)
+                            iTextLine.Str = edited_text
+                            iDrawingText.Update()
+                    
+                    else:
+                        for i in range(iDrawingText_text.Count):
+                            iTextLine = iDrawingText_text.TextLine(i)
                             if iTextLine:
                                 edited_text = self.edit_mark_str(iTextLine.Str)
                                 iTextLine.Str = edited_text
-
+                                for TextItem in iTextLine.TextItems:
+                                    iTextFont = self.module.ITextFont(TextItem)
+                                    iTextFont.Height = 7
+                                    TextItem.Update()
+                                
                         iDrawingText.Update()
 
-                        iTextLine = iDrawingText_text.TextLine(0)
-                        for TextItem in iTextLine.TextItems:
-                            iTextFont = self.module.ITextFont(TextItem)
-                            iTextFont.Height = 7
-                            TextItem.Update()
-                        iDrawingText.Update()
 
     def get_container_operations(self, container_name, view):
         container_dispatch = getattr(self.module, container_name)(view)
@@ -304,10 +289,6 @@ class RuEnTranslateCDW(KompasAPI):
                 iTextLine = cell_text.TextLine(0)
                 for i in range(iTextLine.Count):
                     iTextItem = iTextLine.TextItem(i)
-                    if hyper_text_state:
-                        HyperTextParams = self.module.IHypertextReferenceParam(iTextItem)
-                        HyperTextParams.Destroy()
-                        iTextItem.Update()
                     if iTextItem.Str:
                         edited_text = self.edit_symbol_str(iTextItem.Str)
                         iTextItem.Str = edited_text
@@ -402,7 +383,9 @@ class RuEnTranslateCDW(KompasAPI):
         split_text = str_to_edit.split(' ')
         edited_text = ''
         for split_item in split_text:
-            if split_item in self.DICTIONARY.keys():
+            if split_item in ['мест', 'места']:
+                edited_text = self.get_correct_form(split_text[0], split_text[1])
+            elif split_item in self.DICTIONARY.keys():
                 edited_text += self.DICTIONARY[split_item]
             else:
                 edited_text += split_item
@@ -411,3 +394,13 @@ class RuEnTranslateCDW(KompasAPI):
                 edited_text += ' '
 
         return edited_text
+    
+    def get_correct_form(self, initial_number:str, second_try:str):
+        try:
+            number = int(initial_number)
+            self.number_space = False
+        except:
+            self.number_space = True
+            number = int(second_try)
+        finally:
+            return '{} places'.format(number)

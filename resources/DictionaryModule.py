@@ -7,32 +7,12 @@ from tkinter import ttk
 from .WindowModule import Window
 from .NerpaUtility import read_json, get_path
 from tkinter.messagebox import showerror, showinfo
-import inspect
 
-class CallerInfo:
-    def get_caller_class(self):
-        # Получаем текущий стек вызовов
-        stack = inspect.stack()
-
-        # Пропускаем текущий класс (CallerInfo) и берем предыдущий уровень стека
-        class_calls = []
-        for frame_info in stack[2:]:
-            frame = frame_info[0]  # Первый элемент кортежа — это объект фрейма
-            if 'self' in frame.f_locals:
-                caller_instance = frame.f_locals['self']
-                class_calls.append(type(caller_instance).__name__)
-
-        return class_calls
 
 class DictionaryWindow(Window):
     def __init__(self):
         super().__init__()
-        self.info = CallerInfo().get_caller_class()
-        if 'WalrusWindow' in self.info:
-            self.db_mng = DBManager('\lib\DICTIONARY_MSK.db')
-        else:
-            self.db_mng = DBManager('\lib\DICTIONARY.db')
-
+        self.db_mng = DBManager()
         self.dict_tree = None
 
         self.get_dictionary_window()
@@ -92,6 +72,8 @@ class DictionaryWindow(Window):
                                sticky = 'nsew')
 
         #создание дерева словаря
+
+
         self.dict_tree_style = ttk.Style()
         self.dict_tree_style.configure("Treeview",
                 background="white",
@@ -117,6 +99,7 @@ class DictionaryWindow(Window):
         self.add_data_tree()
         self.alternate_colors()
         self.dict_tree.bind('<Button-1>', self.alternate_colors_click)
+
 
         self.dict_root.update_idletasks()
         w,h = self.get_center_window(self.dict_root)
@@ -264,9 +247,9 @@ class AddWord(Window):
             'Одно из слов уже находится в базе.\nПроверьте правильность заполнения')
 
 class DBManager:
-    def __init__(self, db_name):
+    def __init__(self):
         self.folder_path = get_path()
-        self.db_path = self.folder_path+db_name
+        self.db_path = self.folder_path+"\\lib\\DICTIONARY.db"
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
         self.table_name = 'dictionary'
@@ -280,22 +263,13 @@ class DBManager:
                             en_word TEXT)
                             """.format(self.table_name))
 
-    def get_dictionary(self, language=None):
-        if language == 'en':
-            self.cursor.execute("""
-                                SELECT rus_word, en_word
-                                FROM {}""".format(self.table_name))
-            dict_list = self.cursor.fetchall()
-            keys, values = zip(*dict_list)
-            return dict(zip(values, keys))
-        
-        else:
-            self.cursor.execute("""
-                                SELECT rus_word, en_word
-                                FROM {}""".format(self.table_name))
-            dict_list = self.cursor.fetchall()
-            keys, values = zip(*dict_list)
-            return dict(zip(keys, values))
+    def get_dictionary(self):
+        self.cursor.execute("""
+                            SELECT rus_word, en_word
+                            FROM {}""".format(self.table_name))
+        dict_list = self.cursor.fetchall()
+        keys, values = zip(*dict_list)
+        return dict(zip(keys, values))
 
     def get_column_info(self, column_name):
         self.cursor.execute("""SELECT {}
