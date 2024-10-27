@@ -62,16 +62,25 @@ class AdaptParameters(KompasAPI):
         elif thickness not in self.state_arr: #DESC FOR PLATE
             b_desc = 'PLATE {}'.format(round(1000*thickness))
             m_desc = b_desc
-            m_dim = 'EN 10210'
+            m_dim = 'EN 10029'
             return b_desc, m_desc, m_dim
         else: #DESC FOR PROFILE
             b_desc = '{} L={}'.format(description, round(1000*profile_l))
             m_desc = '{}'.format(description)
-            if description != 'RAIL DIN 3015': #DESC FOR PROFILE
+            if any(profile_name in description for profile_name in ('HEB', 'HEA', 'UPE')):
+                m_dim = 'EN 10365'
+                return b_desc, m_desc, m_dim
+            elif 'ROD' in description:
+                m_dim = 'EN 10060'
+                return b_desc, m_desc, m_dim
+            elif 'LEG' in description:
+                m_dim = 'EN 10056'
+                return b_desc, m_desc, m_dim
+            elif any(profile_name in description for profile_name in ('RHS', 'SHS', 'CHS')):
                 m_dim = 'EN 10210'
                 return b_desc, m_desc, m_dim
             elif description == 'RAIL DIN 3015':
-                m_dim = 'DIN 3015'
+                m_dim = 'DIN 3015'  
                 return b_desc, m_desc, m_dim
         return '-','-', '-'
 
@@ -89,39 +98,64 @@ class AdaptParameters(KompasAPI):
         else:
             return '-'
 
-    def get_b_spec(self, od, l_prof, profile_name, mRGS, mST):
-        '''
-        Функция для определения bSPEC объекта
-        '''
-        if od not in self.state_arr: #TUBE
-            return mRGS
-        elif l_prof not in self.state_arr: #MK
-            if profile_name == "RAIL DIN 3015":
-                return "DIN EN ISO 3506-1"
-            elif mST == 'CV2': #PLATE
-                return B_SPEC[2]
-            else:
-                return B_SPEC[1]
-
-    def get_mst(self, l_profile, l_tube):
+    def get_mst(self, l_profile, l_tube, thickness, profile_name:str):
         '''
         Функция определения CV объекта
         '''
         body = KompasItem(self.dispatch)
         mST = body.get_prp_value(245666335656.0)
-        if mST in self.state_arr and l_profile not in self.state_arr:
-            return 'CV1'
+        if l_profile not in self.state_arr and mST != 'CV2Z':
+            if thickness:
+                if float(thickness)*1000 >= 25:
+                    return 'CV2'
+                else:
+                    return 'CV1'
+            try:
+                if any(profile in profile_name for profile in ('RHS','CHS', 'SHS')):
+                    profile_thick = profile_name.split('X')
+                    print(profile_thick)
+                    profile_thickness = profile_thick[-1]
+                    if float(profile_thickness) >= 25:
+                        return 'CV2'
+                    else:
+                        return 'CV1'
+                elif any(profile in profile_name for profile in ('HEB', 'HEA')):
+                    profile_split = profile_name.split(' ')
+                    if profile_split[0] == 'HEB' and int(profile_split[1]) >= 450:
+                        return 'CV2'
+                    else:
+                        return 'CV1'
+                elif 'ROD' in profile_name:
+                    profile_split = profile_name.split(' ')
+                    if float(profile_split[1]) >= 25:
+                        return 'CV2'
+                    else:
+                        return 'CV1'
+                else:
+                    return 'CV1'
+            except:
+                return mST
         elif l_tube not in self.state_arr:
             return '-'
         else:
             return mST
 
-    def get_mRGS(self, m_tube, mOD, data_table):
-        for item in data_table:
-            if ['{}'.format(m_tube), mOD] == item[:2]:
-                return item[2]
+    def get_mRGS_bSPEC(self, m_tube, mOD, data_table, l_prof, profile_name, mST):
+        if mOD not in self.state_arr: #TUBE
+            for item in data_table:
+                if ['{}'.format(m_tube), mOD] == item[:2]:
+                    return item[2], item[2]
+        elif l_prof not in self.state_arr: #MK
+            if profile_name == "RAIL DIN 3015":
+                return "DIN EN ISO 3506-1", "DIN EN ISO 3506-1"
+            elif mST == 'CV2Z': 
+                return B_SPEC[2], B_SPEC[2]
+            elif mST == 'CV2':
+                return B_SPEC[3], B_SPEC[3]
+            else:
+                return B_SPEC[1], B_SPEC[1]
 
-        return '-'
+        return '-', '-'
 
     def get_bom_mto_params(self):
         '''
@@ -136,9 +170,16 @@ class AdaptParameters(KompasAPI):
             m_id = round(1000*(property_values['OD']-2*property_values['WT']),2) if property_values['OD'] not in self.state_arr else '-'
             m_nps = self.lookup_value(m_od, mNPS)
             m_sch = self.lookup_value(m_od, mSCH)
-            m_rgs = self.get_mRGS(property_values['PIPE_MAT'], m_od, mRGS_PIPING)
 
-            m_st = self.get_mst(property_values['L_PROFILE'], property_values['L_TUBE'])
+            m_st = self.get_mst(property_values['L_PROFILE'], property_values['L_TUBE'],
+                                property_values['T'], property_values['PROFILE_NAME'])
+
+            m_rgs, b_spec = self.get_mRGS_bSPEC(property_values['PIPE_MAT'], 
+                                                m_od, mRGS_PIPING,
+                                                property_values['L_PROFILE'],
+                                                property_values['PROFILE_NAME'],
+                                                m_st)
+
             m_t = property_values['T'] if property_values['T'] not in self.state_arr else '-'
             m_width = round(property_values['WIDTH']*1000,5) if property_values['WIDTH'] not in self.state_arr else '-'
 
@@ -162,11 +203,6 @@ class AdaptParameters(KompasAPI):
 
             b_mat = m_mat
 
-            b_spec = self.get_b_spec(property_values['OD'],
-                                     property_values['L_PROFILE'],
-                                     property_values['PROFILE_NAME'],
-                                     m_rgs, m_st)
-
             mass = round(property_values['MASS'], 1)
             b_type = 'DETAIL' if property_values['bTYPE'] in self.state_arr else property_values['bTYPE']
 
@@ -186,7 +222,7 @@ class AdaptParameters(KompasAPI):
             return BOM_MTO_VALUES
         except Exception as e:
             self.app.MessageBoxEx('Ошибка в свойствах тела. Проверьте правильность создания тел в документе: {}'.format(e),
-                                  'Ошибка')
+                                  'Ошибка', 64)
             return
 
 class AdaptAssy(KompasAPI):

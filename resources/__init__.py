@@ -11,4 +11,3 @@ from .WindowModule import Window
 from .PropertyMngModule import PropertyManager
 from .NerpaUtility import get_path
 from .StampModule import StampWindow
-from .RuEnTranslateModule import RuEnTranslateCDW
